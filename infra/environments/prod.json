@@ -1,0 +1,12 @@
+{
+  "Parameters": {
+    "Environment": "prod",
+    "TelegramBotToken": "your-prod-bot-token-here"
+  },
+  "Tags": {
+    "Environment": "production",
+    "Project": "financial-categorizer-bot",
+    "Owner": "ops-team",
+    "CostCenter": "production"
+  }
+}

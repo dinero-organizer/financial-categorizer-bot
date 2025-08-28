@@ -1,0 +1,92 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.production
+.env.development
+
+# AWS Credentials
+.aws/
+aws-credentials.json
+
+# Lambda Deployment
+lambda-deployment-package.zip
+deployment/
+*.zip
+
+# SAM Build
+infra/.aws-sam/
+.aws-sam/
+
+# Logs
+*.log
+financial_bot.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Documentation
+docs/_build/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Project specific
+financial_bot_*.log
+uploads/
+temp/
+cache/

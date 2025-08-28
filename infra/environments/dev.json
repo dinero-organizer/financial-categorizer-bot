@@ -1,0 +1,12 @@
+{
+  "Parameters": {
+    "Environment": "dev",
+    "TelegramBotToken": "your-dev-bot-token-here"
+  },
+  "Tags": {
+    "Environment": "development",
+    "Project": "financial-categorizer-bot",
+    "Owner": "dev-team",
+    "CostCenter": "development"
+  }
+}

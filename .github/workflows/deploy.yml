@@ -1,0 +1,81 @@
+name: Deploy Financial Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Setup AWS CLI
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+        
+    - name: Install SAM CLI
+      run: |
+        pip install aws-sam-cli
+        
+    - name: Cache SAM dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          infra/.aws-sam
+        key: sam-${{ runner.os }}-${{ hashFiles('infra/template.yaml') }}
+        
+    - name: Deploy to ${{ inputs.environment }}
+      working-directory: infra
+      run: |
+        chmod +x deploy.sh
+        ./deploy.sh ${{ inputs.environment }}
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        
+    - name: Get deployment outputs
+      if: success()
+      working-directory: infra
+      run: |
+        WEBHOOK_URL=$(aws cloudformation describe-stacks \
+          --stack-name "financial-bot-${{ inputs.environment }}" \
+          --query 'Stacks[0].Outputs[?OutputKey==`WebhookUrl`].OutputValue' \
+          --output text)
+        
+        echo "🚀 Deploy successful!"
+        echo "🔗 Webhook URL: $WEBHOOK_URL"
+        echo "webhook-url=$WEBHOOK_URL" >> $GITHUB_OUTPUT
+        
+    - name: Comment on PR (if applicable)
+      if: github.event_name == 'pull_request' && success()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const webhookUrl = '${{ steps.deploy.outputs.webhook-url }}';
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `✅ Deploy para **${{ inputs.environment }}** concluído com sucesso!\n\n🔗 **Webhook URL:** \`${webhookUrl}\``
+          });
