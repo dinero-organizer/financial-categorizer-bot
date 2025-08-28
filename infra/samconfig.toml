@@ -12,6 +12,7 @@ parallel = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+parameter_overrides = "TelegramBotToken=placeholder"
 
 [default.local_start_api.parameters]
 warm_containers = "EAGER"
@@ -24,16 +25,16 @@ warm_containers = "EAGER"
 stack_name = "financial-bot-dev"
 s3_prefix = "financial-bot-dev"
 region = "us-east-1"
-parameter_overrides = "Environment=dev"
+parameter_overrides = "Environment=dev TelegramBotToken=dev-token-placeholder"
 
 [staging.deploy.parameters]
 stack_name = "financial-bot-staging"
 s3_prefix = "financial-bot-staging"
 region = "us-east-1"
-parameter_overrides = "Environment=staging"
+parameter_overrides = "Environment=staging TelegramBotToken=staging-token-placeholder"
 
 [prod.deploy.parameters]
 stack_name = "financial-bot-prod"
 s3_prefix = "financial-bot-prod"
 region = "us-east-1"
-parameter_overrides = "Environment=prod"
+parameter_overrides = "Environment=prod TelegramBotToken=prod-token-placeholder"
