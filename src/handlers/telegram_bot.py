@@ -4,9 +4,18 @@ Manipulador do Telegram para o Financial Categorizer Bot
 
 from src.utils.logger import get_logger
 
-from telegram.ext import ApplicationBuilder, CommandHandler
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackContext
 
 logger = get_logger(__name__)
+
+async def start(update: Update, context: CallbackContext):
+  logger.info(f"Usuário {update.message.from_user.id} iniciou o bot.")
+  await update.message.reply_text(
+    "Olá!\n\n"
+    "Eu sou o Financial Categorizer Bot.\n\n"
+    "Envie um arquivo CSV ou OFX para que eu possa processar.\n",
+)
 
 def main():
   TOKEN = "8323730258:AAGMJBoywxGKphut0QrkLA_ySLgjaK7O-h4"
@@ -15,6 +24,8 @@ def main():
     logger.error("Token de acesso ao bot do Telegram não encontrado.")
 
   app = ApplicationBuilder().token(TOKEN).build()
+
+  app.add_handler(CommandHandler("start", start))
 
   logger.info("Iniciando o Financial Categorizer Bot...")
 
