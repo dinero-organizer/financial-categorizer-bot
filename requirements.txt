@@ -4,3 +4,4 @@ ofxtools>=0.9.5,<1.0.0
 python-telegram-bot>=21.0,<22.0
 requests>=2.31.0,<3.0.0
 aws-sam-cli==1.143.0
+python-dotenv==1.1.1
