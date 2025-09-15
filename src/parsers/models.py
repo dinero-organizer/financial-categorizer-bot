@@ -1,12 +1,16 @@
-class ParsedBankStatement:
-    def __init__(self, expenses: Expense[], date: datetime):
-        this.expenses: Expense[] = expenses
-        this.date: datetime = datetime
+from datetime import datetime, date
+from typing import List
 
 
 class Expense:
     def __init__(self, name: str, value: float, category: str, date: date):
-        this.name: str = name
-        this.value: float = value
-        this.category: str = category
-        this.date: str = date
+        self.name: str = name
+        self.value: float = value
+        self.category: str = category
+        self.date: date = date
+
+
+class ParsedBankStatement:
+    def __init__(self, expenses: List[Expense], date: datetime):
+        self.expenses: List[Expense] = expenses
+        self.date: datetime = date
