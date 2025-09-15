@@ -1,0 +1,209 @@
+"""
+Configurações e fixtures compartilhadas para os testes
+"""
+
+import pytest
+import tempfile
+import os
+from datetime import datetime, date
+from decimal import Decimal
+
+
+@pytest.fixture
+def sample_ofx_content():
+    """
+    Fixture que retorna conteúdo OFX de exemplo para testes
+    """
+    return """OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+<SIGNONMSGSRSV1>
+<SONRS>
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<DTSERVER>20240315120000
+<LANGUAGE>POR
+</SONRS>
+</SIGNONMSGSRSV1>
+<BANKMSGSRSV1>
+<STMTTRNRS>
+<TRNUID>1
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<STMTRS>
+<CURDEF>BRL
+<BANKACCTFROM>
+<BANKID>123
+<ACCTID>123456789
+<ACCTTYPE>CHECKING
+</BANKACCTFROM>
+<BANKTRANLIST>
+<DTSTART>20240301000000
+<DTEND>20240315000000
+<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20240301080000
+<TRNAMT>-150.00
+<FITID>TRN001
+<MEMO>SUPERMERCADO XYZ LTDA
+</STMTTRN>
+<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20240302100000
+<TRNAMT>-89.50
+<FITID>TRN002
+<MEMO>POSTO COMBUSTIVEL ABC
+</STMTTRN>
+<STMTTRN>
+<TRNTYPE>CREDIT
+<DTPOSTED>20240305140000
+<TRNAMT>2500.00
+<FITID>TRN003
+<MEMO>SALARIO EMPRESA XYZ
+</STMTTRN>
+<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20240307090000
+<TRNAMT>-45.80
+<FITID>TRN004
+<MEMO>FARMACIA SAUDE TOTAL
+</STMTTRN>
+<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20240310160000
+<TRNAMT>-1200.00
+<FITID>TRN005
+<MEMO>ALUGUEL APARTAMENTO
+</STMTTRN>
+</BANKTRANLIST>
+<LEDGERBAL>
+<BALAMT>1014.70
+<DTASOF>20240315120000
+</LEDGERBAL>
+</STMTRS>
+</STMTRS>
+</BANKMSGSRSV1>
+</OFX>"""
+
+
+@pytest.fixture
+def sample_ofx_file(sample_ofx_content):
+    """
+    Fixture que cria um arquivo OFX temporário para testes
+    """
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ofx', delete=False, encoding='utf-8') as f:
+        f.write(sample_ofx_content)
+        temp_file_path = f.name
+    
+    yield temp_file_path
+    
+    # Cleanup: remove o arquivo temporário após o teste
+    if os.path.exists(temp_file_path):
+        os.unlink(temp_file_path)
+
+
+@pytest.fixture
+def empty_ofx_content():
+    """
+    Fixture que retorna conteúdo OFX sem transações para testes
+    """
+    return """OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+<SIGNONMSGSRSV1>
+<SONRS>
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<DTSERVER>20240315120000
+<LANGUAGE>POR
+</SONRS>
+</SIGNONMSGSRSV1>
+<BANKMSGSRSV1>
+<STMTTRNRS>
+<TRNUID>1
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<STMTRS>
+<CURDEF>BRL
+<BANKACCTFROM>
+<BANKID>123
+<ACCTID>123456789
+<ACCTTYPE>CHECKING
+</BANKACCTFROM>
+<BANKTRANLIST>
+<DTSTART>20240301000000
+<DTEND>20240315000000
+</BANKTRANLIST>
+<LEDGERBAL>
+<BALAMT>1000.00
+<DTASOF>20240315120000
+</LEDGERBAL>
+</STMTRS>
+</STMTRS>
+</BANKMSGSRSV1>
+</OFX>"""
+
+
+@pytest.fixture
+def invalid_ofx_content():
+    """
+    Fixture que retorna conteúdo OFX inválido para testes de erro
+    """
+    return """INVALID OFX CONTENT
+This is not a valid OFX file format
+<INVALID>
+<TAGS>
+</INVALID>"""
+
+
+@pytest.fixture
+def ofx_content_no_statements():
+    """
+    Fixture que retorna conteúdo OFX válido mas sem extratos
+    """
+    return """OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+<SIGNONMSGSRSV1>
+<SONRS>
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<DTSERVER>20240315120000
+<LANGUAGE>POR
+</SONRS>
+</SIGNONMSGSRSV1>
+</OFX>"""
