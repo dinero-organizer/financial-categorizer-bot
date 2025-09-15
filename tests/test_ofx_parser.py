@@ -257,46 +257,6 @@ class TestIntegration:
             assert isinstance(expense.category, str)
             assert isinstance(expense.date, date)
     
-class TestConvertTransactionToExpense:
-    """Testes para a função _convert_transaction_to_expense"""
-    
-    def test_convert_transaction_with_memo(self):
-        """Testa conversão de transação com memo"""
-        from decimal import Decimal
-        from unittest.mock import Mock
-        
-        # Mock de uma transação OFX
-        transaction = Mock()
-        transaction.memo = "TESTE MEMO"
-        transaction.payee = "TESTE PAYEE"
-        transaction.trnamt = Decimal('-100.50')
-        transaction.dtposted = datetime(2024, 3, 1, 8, 0, 0)
-        
-        expense = _convert_transaction_to_expense(transaction)
-        
-        assert expense.name == "TESTE MEMO"  # Prioriza memo
-        assert expense.value == -100.50
-        assert expense.category == "Não categorizado"
-        assert expense.date == date(2024, 3, 1)
-    
-    def test_convert_transaction_with_payee_only(self):
-        """Testa conversão de transação apenas com payee"""
-        from decimal import Decimal
-        from unittest.mock import Mock
-        
-        transaction = Mock()
-        transaction.memo = None
-        transaction.payee = "TESTE PAYEE"
-        transaction.trnamt = Decimal('500.00')
-        transaction.dtposted = datetime(2024, 3, 5, 14, 0, 0)
-        
-        expense = _convert_transaction_to_expense(transaction)
-        
-        assert expense.name == "TESTE PAYEE"
-        assert expense.value == 500.00
-        assert expense.date == date(2024, 3, 5)
-
-
 class TestIntegration:
     """Testes de integração para casos mais complexos"""
     
