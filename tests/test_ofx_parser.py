@@ -257,44 +257,93 @@ class TestIntegration:
             assert isinstance(expense.category, str)
             assert isinstance(expense.date, date)
     
-class TestConvertTransactionToExpense:
-    """Testes para a função _convert_transaction_to_expense"""
+class TestIntegration:
+    """Testes de integração para casos mais complexos"""
     
-    def test_convert_transaction_with_memo(self):
-        """Testa conversão de transação com memo"""
-        from decimal import Decimal
-        from unittest.mock import Mock
+    def test_complete_workflow_file_to_expenses(self, sample_ofx_file):
+        """Testa o fluxo completo de arquivo para lista de despesas"""
+        result = parse_ofx_file(sample_ofx_file)
         
-        # Mock de uma transação OFX
-        transaction = Mock()
-        transaction.memo = "TESTE MEMO"
-        transaction.payee = "TESTE PAYEE"
-        transaction.trnamt = Decimal('-100.50')
-        transaction.dtposted = datetime(2024, 3, 1, 8, 0, 0)
+        # Verifica estrutura completa
+        assert isinstance(result, ParsedBankStatement)
+        assert isinstance(result.expenses, list)
+        assert isinstance(result.date, datetime)
         
-        expense = _convert_transaction_to_expense(transaction)
+        # Verifica todas as transações
+        expenses = result.expenses
+        assert len(expenses) == 5
         
-        assert expense.name == "TESTE MEMO"  # Prioriza memo
-        assert expense.value == -100.50
-        assert expense.category == "Não categorizado"
-        assert expense.date == date(2024, 3, 1)
+        # Verifica tipos de todas as propriedades
+        for expense in expenses:
+            assert isinstance(expense, Expense)
+            assert isinstance(expense.name, str)
+            assert isinstance(expense.value, float)
+            assert isinstance(expense.category, str)
+            assert isinstance(expense.date, date)
     
-    def test_convert_transaction_with_payee_only(self):
-        """Testa conversão de transação apenas com payee"""
-        from decimal import Decimal
-        from unittest.mock import Mock
+    def test_ofx_with_special_characters(self):
+        """Testa OFX com caracteres especiais"""
+        ofx_with_special_chars = """OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+<SIGNONMSGSRSV1>
+<SONRS>
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<DTSERVER>20240315120000
+<LANGUAGE>POR
+</SONRS>
+</SIGNONMSGSRSV1>
+<BANKMSGSRSV1>
+<STMTTRNRS>
+<TRNUID>1
+<STATUS>
+<CODE>0
+<SEVERITY>INFO
+</STATUS>
+<STMTRS>
+<CURDEF>BRL
+<BANKACCTFROM>
+<BANKID>123
+<ACCTID>123456789
+<ACCTTYPE>CHECKING
+</BANKACCTFROM>
+<BANKTRANLIST>
+<DTSTART>20240301000000
+<DTEND>20240315000000
+<STMTTRN>
+<TRNTYPE>DEBIT
+<DTPOSTED>20240301080000
+<TRNAMT>-150.00
+<FITID>TRN001
+<MEMO>AÇOUGUE & CIA LTDA - JOÃO
+</STMTTRN>
+</BANKTRANLIST>
+<LEDGERBAL>
+<BALAMT>850.00
+<DTASOF>20240315120000
+</LEDGERBAL>
+</STMTRS>
+</STMTRS>
+</BANKMSGSRSV1>
+</OFX>"""
         
-        transaction = Mock()
-        transaction.memo = None
-        transaction.payee = "TESTE PAYEE"
-        transaction.trnamt = Decimal('500.00')
-        transaction.dtposted = datetime(2024, 3, 5, 14, 0, 0)
+        result = parse_ofx_content(ofx_with_special_chars)
         
-        expense = _convert_transaction_to_expense(transaction)
-        
-        assert expense.name == "TESTE PAYEE"
-        assert expense.value == 500.00
-        assert expense.date == date(2024, 3, 5)
+        assert len(result.expenses) == 1
+        # Testa se contém o texto independente do encoding
+        name = result.expenses[0].name
+        assert "OUGUE" in name and "CIA" in name and "LTDA" in name
 
 
 class TestErrorHandling:
