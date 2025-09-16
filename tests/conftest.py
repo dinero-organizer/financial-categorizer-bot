@@ -207,3 +207,113 @@ NEWFILEUID:NONE
 </SONRS>
 </SIGNONMSGSRSV1>
 </OFX>"""
+
+
+# === FIXTURES PARA TESTES CSV ===
+
+@pytest.fixture
+def sample_csv_content():
+    """
+    Fixture que retorna conteúdo CSV de exemplo para testes
+    """
+    return """Data,Descrição,Valor,Categoria
+01/03/2024,SUPERMERCADO XYZ LTDA,-150.50,Alimentação
+02/03/2024,POSTO COMBUSTIVEL ABC,-89.75,Transporte
+05/03/2024,SALARIO EMPRESA XYZ,2500.00,Renda
+07/03/2024,FARMACIA SAUDE TOTAL,-45.80,Saúde
+10/03/2024,ALUGUEL APARTAMENTO,-1200.00,Moradia"""
+
+
+@pytest.fixture
+def sample_csv_content_semicolon():
+    """
+    Fixture que retorna conteúdo CSV com delimitador ponto-e-vírgula
+    """
+    return """Data;Histórico;Débito;Crédito
+01/03/2024;SUPERMERCADO XYZ LTDA;150,50;
+02/03/2024;POSTO COMBUSTIVEL ABC;89,75;
+05/03/2024;SALARIO EMPRESA XYZ;;2.500,00
+07/03/2024;FARMACIA SAUDE TOTAL;45,80;
+10/03/2024;ALUGUEL APARTAMENTO;1.200,00;"""
+
+
+@pytest.fixture
+def sample_csv_content_alternative_format():
+    """
+    Fixture que retorna conteúdo CSV com formato alternativo
+    """
+    return """date,memo,amount,type
+2024-03-01,SUPERMERCADO XYZ LTDA,(150.50),expense
+2024-03-02,POSTO COMBUSTIVEL ABC,(89.75),expense
+2024-03-05,SALARIO EMPRESA XYZ,2500.00,income
+2024-03-07,FARMACIA SAUDE TOTAL,(45.80),expense
+2024-03-10,ALUGUEL APARTAMENTO,(1200.00),expense"""
+
+
+@pytest.fixture
+def sample_csv_file(sample_csv_content):
+    """
+    Fixture que cria um arquivo CSV temporário para testes
+    """
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as f:
+        f.write(sample_csv_content)
+        temp_file_path = f.name
+    
+    yield temp_file_path
+    
+    # Cleanup: remove o arquivo temporário após o teste
+    if os.path.exists(temp_file_path):
+        os.unlink(temp_file_path)
+
+
+@pytest.fixture
+def invalid_csv_content():
+    """
+    Fixture que retorna conteúdo CSV inválido para testes de erro
+    """
+    return """Data,Descrição,Valor
+01/03/2024,TRANSACAO SEM VALOR
+data_inválida,TRANSACAO COM DATA INVÁLIDA,100.50
+01/03/2024,TRANSACAO NORMAL,150.75"""
+
+
+@pytest.fixture
+def empty_csv_content():
+    """
+    Fixture que retorna conteúdo CSV vazio (apenas cabeçalho)
+    """
+    return """Data,Descrição,Valor,Categoria"""
+
+
+@pytest.fixture
+def csv_content_no_header():
+    """
+    Fixture que retorna conteúdo CSV sem cabeçalho
+    """
+    return """01/03/2024,SUPERMERCADO XYZ LTDA,-150.50,Alimentação
+02/03/2024,POSTO COMBUSTIVEL ABC,-89.75,Transporte
+05/03/2024,SALARIO EMPRESA XYZ,2500.00,Renda"""
+
+
+@pytest.fixture
+def csv_content_brazilian_format():
+    """
+    Fixture que retorna conteúdo CSV com formato brasileiro (R$, pontos e vírgulas)
+    """
+    return """Data,Descrição,Valor,Categoria
+01/03/2024,SUPERMERCADO XYZ LTDA,"R$ 1.150,50",Alimentação
+02/03/2024,POSTO COMBUSTIVEL ABC,"R$ 89,75",Transporte
+05/03/2024,SALARIO EMPRESA XYZ,"R$ 2.500,00",Renda
+07/03/2024,FARMACIA SAUDE TOTAL,"R$ 45,80",Saúde"""
+
+
+@pytest.fixture
+def csv_content_with_negative_parentheses():
+    """
+    Fixture que retorna conteúdo CSV com valores negativos em parênteses
+    """
+    return """Data,Descrição,Valor,Categoria
+01/03/2024,SUPERMERCADO XYZ LTDA,(150.50),Alimentação
+02/03/2024,POSTO COMBUSTIVEL ABC,(89.75),Transporte
+05/03/2024,SALARIO EMPRESA XYZ,2500.00,Renda
+07/03/2024,FARMACIA SAUDE TOTAL,(45.80),Saúde"""

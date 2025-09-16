@@ -18,12 +18,25 @@ except ImportError as e:
     print(f"❌ Erro ao importar models: {e}")
     sys.exit(1)
 
+# Variáveis para controlar quais parsers estão disponíveis
+OFX_AVAILABLE = False
+CSV_AVAILABLE = False
+
 try:
     from src.parsers.ofx import parse_ofx_content, parse_ofx_file
     print("✅ Import do parser OFX funcionando")
+    OFX_AVAILABLE = True
 except ImportError as e:
-    print(f"❌ Erro ao importar parser OFX: {e}")
-    print("⚠️  Certifique-se de que 'ofxtools' está instalado: pip install ofxtools")
+    print(f"⚠️ Parser OFX não disponível: {e}")
+    print("   💡 Para usar o parser OFX: pip install ofxtools")
+
+try:
+    from src.parsers.csv import parse_csv_bank_statement, CSVBankParser
+    print("✅ Import do parser CSV funcionando")
+    CSV_AVAILABLE = True
+except ImportError as e:
+    print(f"❌ Erro ao importar parser CSV: {e}")
+    print("   Este é um erro crítico pois o CSV parser deveria estar disponível")
     sys.exit(1)
 
 
@@ -167,40 +180,155 @@ NEWFILEUID:NONE
         raise
 
 
+def test_csv_parser():
+    """Testa o parser CSV com dados de exemplo"""
+    print("\n🧪 Testando parser CSV...")
+    
+    # Conteúdo CSV de exemplo
+    sample_csv = """Data,Descrição,Valor,Categoria
+01/03/2024,SUPERMERCADO XYZ LTDA,-150.50,Alimentação
+02/03/2024,POSTO COMBUSTIVEL ABC,-89.75,Transporte
+05/03/2024,SALARIO EMPRESA XYZ,2500.00,Renda
+07/03/2024,FARMACIA SAUDE TOTAL,-45.80,Saúde
+10/03/2024,ALUGUEL APARTAMENTO,-1200.00,Moradia"""
+    
+    try:
+        # Cria arquivo temporário para teste
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as f:
+            f.write(sample_csv)
+            temp_file = f.name
+        
+        try:
+            # Testa parsing de arquivo
+            result = parse_csv_bank_statement(temp_file)
+            
+            # Validações básicas
+            assert isinstance(result, ParsedBankStatement)
+            assert len(result.expenses) == 5
+            assert isinstance(result.date, datetime)
+            
+            # Valida primeira transação
+            first_expense = result.expenses[0]
+            assert first_expense.name == "SUPERMERCADO XYZ LTDA"
+            assert first_expense.value == -150.50
+            assert first_expense.category == "Alimentação"
+            assert first_expense.date == date(2024, 3, 1)
+            
+            # Valida transação de renda
+            income_expense = result.expenses[2]
+            assert income_expense.name == "SALARIO EMPRESA XYZ"
+            assert income_expense.value == 2500.00
+            assert income_expense.category == "Renda"
+            assert income_expense.date == date(2024, 3, 5)
+            
+            print("✅ Parser CSV funcionando corretamente")
+            print(f"   📊 {len(result.expenses)} transações processadas")
+            print(f"   📅 Data do extrato: {result.date}")
+            
+            # Testa diferentes formatos de valor
+            parser = CSVBankParser()
+            
+            # Teste formato brasileiro
+            assert parser.parse_value("R$ 1.150,50") == 1150.50
+            assert parser.parse_value("(89,75)") == -89.75
+            assert parser.parse_value("2.500,00") == 2500.00
+            
+            print("✅ Conversão de valores funcionando corretamente")
+            
+            # Teste diferentes formatos de data
+            assert parser.parse_date("01/03/2024") == date(2024, 3, 1)
+            assert parser.parse_date("2024-03-01") == date(2024, 3, 1)
+            assert parser.parse_date("15/12/2023") == date(2023, 12, 15)
+            
+            print("✅ Conversão de datas funcionando corretamente")
+            
+        finally:
+            os.unlink(temp_file)
+            
+    except Exception as e:
+        print(f"❌ Erro no parser CSV: {e}")
+        raise
+
+
 def test_error_handling():
     """Testa tratamento de erros"""
     print("\n🧪 Testando tratamento de erros...")
     
-    # Testa arquivo inexistente
-    try:
-        parse_ofx_file("arquivo_inexistente.ofx")
-        assert False, "Deveria ter dado erro"
-    except FileNotFoundError:
-        print("✅ Erro de arquivo inexistente tratado corretamente")
+    # Testa erros OFX se disponível
+    if OFX_AVAILABLE:
+        # Testa arquivo inexistente OFX
+        try:
+            parse_ofx_file("arquivo_inexistente.ofx")
+            assert False, "Deveria ter dado erro"
+        except FileNotFoundError:
+            print("✅ Erro de arquivo OFX inexistente tratado corretamente")
+        
+        # Testa conteúdo OFX inválido
+        try:
+            parse_ofx_content("conteúdo inválido")
+            assert False, "Deveria ter dado erro"
+        except ValueError:
+            print("✅ Erro de conteúdo OFX inválido tratado corretamente")
     
-    # Testa conteúdo inválido
-    try:
-        parse_ofx_content("conteúdo inválido")
-        assert False, "Deveria ter dado erro"
-    except ValueError:
-        print("✅ Erro de conteúdo inválido tratado corretamente")
+    # Testa erros CSV se disponível
+    if CSV_AVAILABLE:
+        # Testa arquivo CSV inexistente
+        try:
+            parse_csv_bank_statement("arquivo_inexistente.csv")
+            assert False, "Deveria ter dado erro"
+        except FileNotFoundError:
+            print("✅ Erro de arquivo CSV inexistente tratado corretamente")
+        
+        # Testa parser CSV com valores inválidos
+        parser = CSVBankParser()
+        assert parser.parse_value("abc") == 0.0
+        assert parser.parse_date("data_inválida") is None
+        print("✅ Tratamento de valores CSV inválidos funcionando")
 
 
 def main():
     """Executa todos os testes"""
-    print("🚀 Iniciando testes rápidos do parser OFX")
+    print("🚀 Iniciando testes rápidos dos parsers")
     print("=" * 50)
     
+    tests_run = 0
+    tests_passed = 0
+    
     try:
+        # Testa os models (sempre disponível)
         test_models()
-        test_ofx_parser()
+        tests_run += 1
+        tests_passed += 1
+        
+        # Testa parser OFX se disponível
+        if OFX_AVAILABLE:
+            test_ofx_parser()
+            tests_run += 1
+            tests_passed += 1
+        else:
+            print("\n⏭️ Pulando testes OFX (dependência não instalada)")
+        
+        # Testa parser CSV se disponível
+        if CSV_AVAILABLE:
+            test_csv_parser()
+            tests_run += 1
+            tests_passed += 1
+        
+        # Testa tratamento de erros
         test_error_handling()
+        tests_run += 1
+        tests_passed += 1
         
         print("\n" + "=" * 50)
-        print("🎉 Todos os testes passaram com sucesso!")
+        print(f"🎉 {tests_passed}/{tests_run} conjuntos de testes passaram com sucesso!")
+        
         print("\n📋 Para executar os testes completos:")
         print("   1. pip install -r requirements.txt")
         print("   2. pytest tests/ -v")
+        
+        print("\n🗂️ Status dos parsers:")
+        print(f"   • Parser OFX: {'✅ Disponível' if OFX_AVAILABLE else '⚠️ Não disponível (pip install ofxtools)'}")
+        print(f"   • Parser CSV: {'✅ Disponível' if CSV_AVAILABLE else '❌ Erro'}")
         
     except Exception as e:
         print(f"\n💥 Erro nos testes: {e}")
