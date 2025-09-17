@@ -50,7 +50,7 @@ def parse_ofx_file(file_path: str) -> ParsedBankStatement:
         expenses = []
         if statement.transactions:
             for transaction in statement.transactions:
-                expense = _convert_transaction_to_expense(transaction)
+                expense = _convert_transaction_to_expense(transaction, len(expenses))
                 expenses.append(expense)
         
         # Data do extrato (usa a data da última transação ou data atual se não houver transações)
@@ -104,7 +104,7 @@ def parse_ofx_content(content: Union[str, bytes]) -> ParsedBankStatement:
         expenses = []
         if statement.transactions:
             for transaction in statement.transactions:
-                expense = _convert_transaction_to_expense(transaction)
+                expense = _convert_transaction_to_expense(transaction, len(expenses))
                 expenses.append(expense)
         
         # Data do extrato
@@ -122,7 +122,7 @@ def parse_ofx_content(content: Union[str, bytes]) -> ParsedBankStatement:
         raise ValueError(f"Erro ao processar conteúdo OFX: {str(e)}")
 
 
-def _convert_transaction_to_expense(transaction: STMTTRN) -> Expense:
+def _convert_transaction_to_expense(transaction: STMTTRN, id) -> Expense:
     """
     Converte uma transação OFX para o modelo Expense.
     
@@ -145,6 +145,7 @@ def _convert_transaction_to_expense(transaction: STMTTRN) -> Expense:
     transaction_date = transaction.dtposted.date() if transaction.dtposted else datetime.now().date()
     
     return Expense(
+        id=id,
         name=name,
         value=value,
         category=category,

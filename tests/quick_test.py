@@ -46,12 +46,14 @@ def test_models():
     
     # Cria uma despesa
     expense = Expense(
+        id=1,
         name="Teste",
         value=100.50,
         category="Teste",
         date=date(2024, 3, 1)
     )
     
+    assert expense.id == 1
     assert expense.name == "Teste"
     assert expense.value == 100.50
     assert expense.category == "Teste"

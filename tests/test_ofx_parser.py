@@ -159,7 +159,7 @@ class TestConvertTransactionToExpense:
         transaction.trnamt = Decimal('-100.50')
         transaction.dtposted = datetime(2024, 3, 1, 8, 0, 0)
         
-        expense = _convert_transaction_to_expense(transaction)
+        expense = _convert_transaction_to_expense(transaction, 1)
         
         assert expense.name == "TESTE MEMO"  # Prioriza memo
         assert expense.value == -100.50
@@ -177,7 +177,7 @@ class TestConvertTransactionToExpense:
         transaction.trnamt = Decimal('500.00')
         transaction.dtposted = datetime(2024, 3, 5, 14, 0, 0)
         
-        expense = _convert_transaction_to_expense(transaction)
+        expense = _convert_transaction_to_expense(transaction, 1)
         
         assert expense.name == "TESTE PAYEE"
         assert expense.value == 500.00
@@ -194,7 +194,7 @@ class TestConvertTransactionToExpense:
         transaction.trnamt = Decimal('-25.75')
         transaction.dtposted = datetime(2024, 3, 10, 16, 30, 0)
         
-        expense = _convert_transaction_to_expense(transaction)
+        expense = _convert_transaction_to_expense(transaction, 1)
         
         assert expense.name == "Transação sem descrição"
         assert expense.value == -25.75
@@ -210,7 +210,7 @@ class TestConvertTransactionToExpense:
         transaction.trnamt = None
         transaction.dtposted = datetime(2024, 3, 1, 8, 0, 0)
         
-        expense = _convert_transaction_to_expense(transaction)
+        expense = _convert_transaction_to_expense(transaction, 1)
         
         assert expense.name == "TESTE SEM VALOR"
         assert expense.value == 0.0
@@ -226,7 +226,7 @@ class TestConvertTransactionToExpense:
         transaction.trnamt = Decimal('-50.00')
         transaction.dtposted = None
         
-        expense = _convert_transaction_to_expense(transaction)
+        expense = _convert_transaction_to_expense(transaction, 1)
         
         assert expense.name == "TESTE SEM DATA"
         assert expense.value == -50.00

@@ -178,7 +178,7 @@ class CSVBankParser:
                 
                 for row_num, row in enumerate(reader, start=2):
                     try:
-                        expense = self._parse_row(row, column_mapping, row_num)
+                        expense = self._parse_row(row, column_mapping, row_num, len(expenses))
                         if expense:
                             expenses.append(expense)
                     except Exception as e:
@@ -196,7 +196,7 @@ class CSVBankParser:
             logger.error(f"Erro ao processar arquivo CSV: {e}")
             raise
     
-    def _parse_row(self, row: List[str], column_mapping: Dict[str, int], row_num: int) -> Optional[Expense]:
+    def _parse_row(self, row: List[str], column_mapping: Dict[str, int], row_num: int, id) -> Optional[Expense]:
         """Parse de uma linha do CSV"""
         if not row or len(row) < max(column_mapping.values(), default=0) + 1:
             return None
@@ -255,6 +255,7 @@ class CSVBankParser:
             category = "Não categorizada"
         
         return Expense(
+            id=id,
             name=name,
             value=value,
             category=category,

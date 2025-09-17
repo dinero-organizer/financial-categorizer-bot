@@ -418,7 +418,7 @@ class TestParseRow:
         row = ["01/03/2024", "SUPERMERCADO XYZ", "-150.50", "Alimentação"]
         column_mapping = {'date': 0, 'description': 1, 'value': 2, 'category': 3}
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is not None
         assert expense.name == "SUPERMERCADO XYZ"
@@ -433,7 +433,7 @@ class TestParseRow:
         row = ["SUPERMERCADO XYZ", "-150.50", "Alimentação"]
         column_mapping = {'description': 0, 'value': 1, 'category': 2}  # Sem 'date'
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is None
 
@@ -444,7 +444,7 @@ class TestParseRow:
         row = ["data_inválida", "SUPERMERCADO XYZ", "-150.50", "Alimentação"]
         column_mapping = {'date': 0, 'description': 1, 'value': 2, 'category': 3}
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is None
 
@@ -455,7 +455,7 @@ class TestParseRow:
         row = ["01/03/2024", "", "-150.50", "Alimentação"]
         column_mapping = {'date': 0, 'description': 1, 'value': 2, 'category': 3}
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is not None
         assert expense.name == ""  # Descrição vazia
@@ -468,7 +468,7 @@ class TestParseRow:
         row = ["01/03/2024", "SUPERMERCADO XYZ", "-150.50"]
         column_mapping = {'date': 0, 'description': 1, 'value': 2}  # Sem 'category'
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is not None
         assert expense.category == "Não categorizada"
@@ -480,7 +480,7 @@ class TestParseRow:
         row = []
         column_mapping = {'date': 0, 'description': 1, 'value': 2}
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is None
 
@@ -491,7 +491,7 @@ class TestParseRow:
         row = ["01/03/2024"]  # Apenas uma coluna
         column_mapping = {'date': 0, 'description': 1, 'value': 2}
         
-        expense = parser._parse_row(row, column_mapping, 2)
+        expense = parser._parse_row(row, column_mapping, 2, 1)
         
         assert expense is None
 

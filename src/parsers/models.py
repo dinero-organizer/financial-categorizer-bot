@@ -3,7 +3,8 @@ from typing import List
 
 
 class Expense:
-    def __init__(self, name: str, value: float, category: str, date: date):
+    def __init__(self, id: int, name: str, value: float, category: str, date: date):
+        self.id: int = id
         self.name: str = name
         self.value: float = value
         self.category: str = category

@@ -23,42 +23,49 @@ def create_sample_data():
     # Simula transações que seriam extraídas de um arquivo OFX
     expenses = [
         Expense(
+            id=1,
             name="SUPERMERCADO BOM PREÇO LTDA",
             value=-150.75,
             category="Não categorizado",
             date=date(2024, 3, 1)
         ),
         Expense(
+            id=2,
             name="POSTO SHELL - BR 101",
             value=-89.50,
             category="Não categorizado", 
             date=date(2024, 3, 2)
         ),
         Expense(
+            id=3,
             name="SALÁRIO - EMPRESA XYZ S.A.",
             value=3500.00,
             category="Não categorizado",
             date=date(2024, 3, 5)
         ),
         Expense(
+            id=4,
             name="FARMÁCIA DROGARAIA",
             value=-45.80,
             category="Não categorizado",
             date=date(2024, 3, 7)
         ),
         Expense(
+            id=5,
             name="ALUGUEL APARTAMENTO",
             value=-1200.00,
             category="Não categorizado",
             date=date(2024, 3, 10)
         ),
         Expense(
+            id=6,
             name="NETFLIX.COM",
             value=-29.90,
             category="Não categorizado",
             date=date(2024, 3, 12)
         ),
         Expense(
+            id=7,
             name="TRANSFERÊNCIA PIX RECEBIDA",
             value=200.00,
             category="Não categorizado",
