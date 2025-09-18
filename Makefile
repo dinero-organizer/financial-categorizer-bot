@@ -10,8 +10,11 @@ venv:
 	@echo Virtual environment created at .venv
 	@echo To activate: .venv\Scripts\activate
 
-run:
+run-lambda:
 	.venv\Scripts\python.exe main.py
+
+run-telegram-bot:
+	.venv\Scripts\python.exe src/handlers/telegram_bot.py
 
 clean:
 	rmdir /s /q .venv

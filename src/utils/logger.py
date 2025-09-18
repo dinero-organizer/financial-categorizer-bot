@@ -34,3 +34,6 @@ class Messages:
     # Informações
     PROCESSING_START = "Iniciando processamento de {type}"
     PROCESSING_COMPLETE = "Processamento concluído em {duration}s"
+
+    # Inputs inválidos
+    INVALID_INPUT = "O arquivo enviado não é suportado. Por favor, envie um arquivo CSV ou OFX."

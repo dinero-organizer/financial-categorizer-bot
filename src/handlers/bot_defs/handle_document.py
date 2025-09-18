@@ -9,7 +9,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
   document = update.message.document
 
   if not document:
-    await update.message.reply_text("⚠️ Por favor, envie um arquivo válido (CSV ou OFX).")
+    await update.message.reply_text(Messages.INVALID_INPUT)
     return
   
   file_name = document.file_name
