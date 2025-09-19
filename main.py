@@ -1,65 +1,35 @@
 """
-AWS Lambda handler for Financial Categorizer Telegram Bot
+Manipulador do Telegram para o Financial Categorizer Bot
 """
 
-import json
-from typing import Dict, Any
+import os
 
-from src.utils.logger import get_logger, Messages
-from src.utils.error_handler import ErrorHandler, handle_errors
+from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+
 from src.handlers.bot_defs.handle_document import handle_document
+from src.handlers.bot_defs.start import start
+from src.utils.logger import get_logger
 
+load_dotenv()
 logger = get_logger(__name__)
 
-def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
-    """
-    Main Lambda handler for Telegram webhook.
-    """
-
-    logger.info(f"Evento recebido: {event}")
-    logger.info(f"Contexto: {context}")
-
-    try:
-        # Parse Telegram webhook data
-        body = json.loads(event.get('body', '{}'))
-        message = body.get('message', {})
-        
-        # Route based on message type (CSV/OFX only)
-        if 'document' in message:
-            return handle_file_upload(message)
-        else:
-            return handle_text_message(message)
-            
-    except Exception as e:
-        return ErrorHandler.handle_generic_error(e, "webhook")
+TOKEN = os.getenv("BOT_TOKEN_TELEGRAM")
+if not TOKEN:
+    logger.error("Token de acesso ao bot do Telegram não encontrado.")
 
 
-@handle_errors("file")
-def handle_file_upload(message: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle CSV/OFX file uploads"""
-    status, message = handle_document(message)
-    return ErrorHandler.lambda_response(400, "Processamento de arquivos ainda não implementado")
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
 
-def handle_text_message(message: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle text messages"""
-    return {'statusCode': 400, 'body': json.dumps({'message': Messages.INVALID_INPUT})}
+    app.add_handler(CommandHandler("start", start))
+
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+
+    logger.info("Iniciando o Financial Categorizer Bot...")
+
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    mock_event = {
-        'body': json.dumps({
-            'message': {
-                'text': 'Olá bot!',
-                'chat': {'id': 123}
-            }
-        })
-    }
-
-    logger.info("-" * 50)
-    logger.info("Rodando lambda com evento mockado...")
-    logger.info("-" * 50)
-    result = lambda_handler(mock_event, None)
-    logger.info(f"Result: {result}")
-    logger.info("-" * 50)
-    logger.info("Bot lambda terminou.")
-    logger.info("-" * 50)
+    main()
