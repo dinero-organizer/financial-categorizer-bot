@@ -1,5 +1,5 @@
 """
-Classificador de transações usando AWS Bedrock
+Classificador de transações (stub). Integre aqui com um LLM via HTTP se necessário.
 """
 
 from src.utils.logger import get_logger

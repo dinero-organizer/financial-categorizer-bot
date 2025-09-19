@@ -35,28 +35,12 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET: !Ref DocumentsBucket
-          TEXTRACT_REGION: !Ref AWS::Region
-          SUPPORTED_IMAGE_FORMATS: "jpg,jpeg,png,tiff,pdf"
           MAX_FILE_SIZE_MB: "10"
       Policies:
         - S3FullAccessPolicy:
             BucketName: !Ref DocumentsBucket
         - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - textract:DetectDocumentText
-                - textract:AnalyzeDocument
-                - textract:StartDocumentTextDetection
-                - textract:GetDocumentTextDetection
-                - textract:StartDocumentAnalysis
-                - textract:GetDocumentAnalysis
-              Resource: "*"
-            - Effect: Allow
-              Action:
-                - bedrock:InvokeModel
-                - bedrock:InvokeModelWithResponseStream
-              Resource: "*"
+          Statement: []
       Events:
         TelegramWebhook:
           Type: Api

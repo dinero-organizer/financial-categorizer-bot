@@ -24,11 +24,9 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         body = json.loads(event.get('body', '{}'))
         message = body.get('message', {})
         
-        # Route based on message type
+        # Route based on message type (CSV/OFX only)
         if 'document' in message:
             return handle_file_upload(message)
-        elif 'photo' in message:
-            return handle_image_upload(message)
         else:
             return handle_text_message(message)
             
@@ -41,12 +39,6 @@ def handle_file_upload(message: Dict[str, Any]) -> Dict[str, Any]:
     """Handle CSV/OFX file uploads"""
     status, message = handle_document(message)
     return ErrorHandler.lambda_response(400, "Processamento de arquivos ainda não implementado")
-
-
-def handle_image_upload(message: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle image/PDF uploads"""
-    return {'statusCode': 400, 'body': json.dumps({'message': Messages.INVALID_INPUT})}
-
 
 def handle_text_message(message: Dict[str, Any]) -> Dict[str, Any]:
     """Handle text messages"""
