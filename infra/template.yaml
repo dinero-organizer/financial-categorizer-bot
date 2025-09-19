@@ -34,11 +34,8 @@ Resources:
       Description: "Financial Categorizer Telegram Bot"
       Environment:
         Variables:
-          S3_BUCKET: !Ref DocumentsBucket
           MAX_FILE_SIZE_MB: "10"
       Policies:
-        - S3FullAccessPolicy:
-            BucketName: !Ref DocumentsBucket
         - Version: "2012-10-17"
           Statement: []
       Events:
@@ -59,23 +56,7 @@ Resources:
         AllowMethods: "'POST'"
         AllowOrigins: "'*'"
 
-  # S3 Bucket para documentos/arquivos
-  DocumentsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "financial-bot-documents-${Environment}-${AWS::AccountId}"
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteOldFiles
-            Status: Enabled
-            ExpirationInDays: 30
+  # (Sem bucket S3 em runtime; arquivos são recebidos via Telegram)
 
   # CloudWatch Log Group
   BotLogGroup:
@@ -92,8 +73,3 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-webhook-url"
   
-  S3Bucket:
-    Description: "Nome do bucket S3"
-    Value: !Ref DocumentsBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-s3-bucket"
