@@ -36,11 +36,6 @@ env/
 .aws/
 aws-credentials.json
 
-# Lambda Deployment
-lambda-deployment-package.zip
-deployment/
-*.zip
-
 # SAM Build
 infra/.aws-sam/
 .aws-sam/

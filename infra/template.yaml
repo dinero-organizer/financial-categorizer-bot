@@ -24,40 +24,6 @@ Globals:
         ENVIRONMENT: !Ref Environment
 
 Resources:
-  # Lambda Function Principal
-  FinancialBotFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub "financial-bot-${Environment}"
-      CodeUri: ../
-      Handler: main.lambda_handler
-      Description: "Financial Categorizer Telegram Bot"
-      Environment:
-        Variables:
-          MAX_FILE_SIZE_MB: "10"
-      Policies:
-        - Version: "2012-10-17"
-          Statement: []
-      Events:
-        TelegramWebhook:
-          Type: Api
-          Properties:
-            RestApiId: !Ref TelegramApi
-            Path: /webhook
-            Method: post
-
-  # API Gateway para webhook do Telegram
-  TelegramApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub "financial-bot-api-${Environment}"
-      StageName: !Ref Environment
-      Cors:
-        AllowMethods: "'POST'"
-        AllowOrigins: "'*'"
-
-  # (Sem bucket S3 em runtime; arquivos são recebidos via Telegram)
-
   # CloudWatch Log Group
   BotLogGroup:
     Type: AWS::Logs::LogGroup
@@ -65,11 +31,3 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/financial-bot-${Environment}"
       RetentionInDays: 14
 
-
-Outputs:
-  WebhookUrl:
-    Description: "URL do webhook para configurar no Telegram"
-    Value: !Sub "https://${TelegramApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/webhook"
-    Export:
-      Name: !Sub "${AWS::StackName}-webhook-url"
-  
