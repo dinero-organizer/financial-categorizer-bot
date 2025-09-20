@@ -1,5 +1,6 @@
 """
 Classificador de transações usando Google Gemini
+
 """
 
 import json

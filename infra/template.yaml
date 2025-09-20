@@ -24,75 +24,6 @@ Globals:
         ENVIRONMENT: !Ref Environment
 
 Resources:
-  # Lambda Function Principal
-  FinancialBotFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub "financial-bot-${Environment}"
-      CodeUri: ../
-      Handler: main.lambda_handler
-      Description: "Financial Categorizer Telegram Bot"
-      Environment:
-        Variables:
-          S3_BUCKET: !Ref DocumentsBucket
-          TEXTRACT_REGION: !Ref AWS::Region
-          SUPPORTED_IMAGE_FORMATS: "jpg,jpeg,png,tiff,pdf"
-          MAX_FILE_SIZE_MB: "10"
-      Policies:
-        - S3FullAccessPolicy:
-            BucketName: !Ref DocumentsBucket
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - textract:DetectDocumentText
-                - textract:AnalyzeDocument
-                - textract:StartDocumentTextDetection
-                - textract:GetDocumentTextDetection
-                - textract:StartDocumentAnalysis
-                - textract:GetDocumentAnalysis
-              Resource: "*"
-            - Effect: Allow
-              Action:
-                - bedrock:InvokeModel
-                - bedrock:InvokeModelWithResponseStream
-              Resource: "*"
-      Events:
-        TelegramWebhook:
-          Type: Api
-          Properties:
-            RestApiId: !Ref TelegramApi
-            Path: /webhook
-            Method: post
-
-  # API Gateway para webhook do Telegram
-  TelegramApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub "financial-bot-api-${Environment}"
-      StageName: !Ref Environment
-      Cors:
-        AllowMethods: "'POST'"
-        AllowOrigins: "'*'"
-
-  # S3 Bucket para documentos/arquivos
-  DocumentsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "financial-bot-documents-${Environment}-${AWS::AccountId}"
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteOldFiles
-            Status: Enabled
-            ExpirationInDays: 30
-
   # CloudWatch Log Group
   BotLogGroup:
     Type: AWS::Logs::LogGroup
@@ -100,16 +31,3 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/financial-bot-${Environment}"
       RetentionInDays: 14
 
-
-Outputs:
-  WebhookUrl:
-    Description: "URL do webhook para configurar no Telegram"
-    Value: !Sub "https://${TelegramApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/webhook"
-    Export:
-      Name: !Sub "${AWS::StackName}-webhook-url"
-  
-  S3Bucket:
-    Description: "Nome do bucket S3"
-    Value: !Ref DocumentsBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-s3-bucket"
