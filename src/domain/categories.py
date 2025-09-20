@@ -9,4 +9,5 @@ class Category(StrEnum):
     RENDA = "Renda"
     RECEITA = "Receita"
     TRANSFERENCIAS = "Transferências"
+    ESTUDO = "Estudo"
     OUTROS = "Outros"
