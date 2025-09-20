@@ -5,14 +5,13 @@ Auxiliares AWS para a função Lambda
 from src.ai.transaction_classifier import categorize_with_gemini
 
 
-def categorize_json_statement(json_statement: dict, custom_categories: list = None) -> dict:
+def categorize_json_statement(json_statement: dict) -> dict:
     """
     Categoriza um extrato bancário em formato JSON usando Gemini
     
     Args:
         json_statement: Extrato bancário em formato JSON
-        custom_categories: Lista opcional de categorias personalizadas
-        
+    
     Returns:
         Extrato bancário com transações categorizadas
     """
@@ -22,7 +21,7 @@ def categorize_json_statement(json_statement: dict, custom_categories: list = No
         return json_statement
     
     # Categoriza as transações
-    categorized_transactions = categorize_with_gemini(transactions, custom_categories)
+    categorized_transactions = categorize_with_gemini(transactions)
     
     # Atualiza o JSON com as transações categorizadas
     result = json_statement.copy()
@@ -30,7 +29,7 @@ def categorize_json_statement(json_statement: dict, custom_categories: list = No
     result['categorization_info'] = {
         'method': 'gemini',
         'total_transactions': len(categorized_transactions),
-        'categories_used': custom_categories or 'default'
+        'categories_used': 'default'
     }
     
     return result
