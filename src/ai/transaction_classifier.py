@@ -55,22 +55,20 @@ class TransactionClassifier:
             logger.error(f"Erro ao inicializar cliente Gemini: {e}")
             raise
     
-    def categorize_transactions(self, transactions: List[Dict[str, Any]], 
-                              custom_categories: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def categorize_transactions(self, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Categoriza uma lista de transações usando Gemini
         
         Args:
             transactions: Lista de transações no formato JSON
-            custom_categories: Lista opcional de categorias personalizadas
-            
+        
         Returns:
             Lista de transações com categorias atribuídas
         """
         if not transactions:
             return []
         
-        categories = custom_categories or self.default_categories
+        categories = self.default_categories
         
         try:
             # Prepara o prompt para o Gemini
@@ -98,8 +96,8 @@ class TransactionClassifier:
         
         # Formata as transações para o prompt
         transactions_text = ""
-        for i, tx in enumerate(transactions, 1):
-            transactions_text += f"{i}. {tx['name']} - R$ {tx['value']:.2f} ({tx['date']})\n"
+        for tx in transactions:
+            transactions_text += f"ID: {tx['id']} | {tx['name']} - R$ {tx['value']:.2f} ({tx['date']})\n"
         
         prompt = f"""
 Você é um especialista em categorização de transações financeiras pessoais. 
@@ -114,13 +112,14 @@ IMPORTANTE:
 - Responda APENAS no formato JSON válido
 - Use apenas as categorias fornecidas
 - Para cada transação, forneça a categoria mais adequada
+- Utilize o campo 'id' de cada transação para identificar no resultado
 - Se uma transação não se encaixar bem em nenhuma categoria, use "Outros"
 
 Formato da resposta:
 {{
     "categorizations": [
-        {{"transaction_index": 1, "category": "Alimentação", "confidence": 0.9, "reasoning": "Restaurante identificado no nome"}},
-        {{"transaction_index": 2, "category": "Transporte", "confidence": 0.8, "reasoning": "Uber identificado"}}
+        {{"id": 123, "category": "Alimentação", "confidence": 0.9, "reasoning": "Restaurante identificado no nome"}},
+        {{"id": 456, "category": "Transporte", "confidence": 0.8, "reasoning": "Uber identificado"}}
     ]
 }}
 
@@ -148,20 +147,20 @@ Responda apenas com o JSON, sem texto adicional:
             result = json.loads(response)
             categorizations = result.get('categorizations', [])
             
-            # Cria um mapa de categorizações por índice
+            # Cria um mapa de categorizações por id
             categorization_map = {}
             for cat in categorizations:
-                idx = cat['transaction_index'] - 1  # Converte para índice baseado em 0
-                if 0 <= idx < len(original_transactions):
-                    categorization_map[idx] = cat
+                tx_id = cat.get('id')
+                if tx_id is not None:
+                    categorization_map[tx_id] = cat
             
             # Aplica as categorizações
             categorized_transactions = []
-            for i, tx in enumerate(original_transactions):
+            for tx in original_transactions:
                 tx_copy = tx.copy()
-                
-                if i in categorization_map:
-                    cat_info = categorization_map[i]
+                tx_id = tx.get('id')
+                if tx_id in categorization_map:
+                    cat_info = categorization_map[tx_id]
                     tx_copy['category'] = cat_info['category']
                     tx_copy['categorization_confidence'] = cat_info.get('confidence', 0.5)
                     tx_copy['categorization_reasoning'] = cat_info.get('reasoning', '')
@@ -169,7 +168,6 @@ Responda apenas com o JSON, sem texto adicional:
                     tx_copy['category'] = 'Outros'
                     tx_copy['categorization_confidence'] = 0.0
                     tx_copy['categorization_reasoning'] = 'Não foi possível categorizar'
-                
                 categorized_transactions.append(tx_copy)
             
             return categorized_transactions
@@ -193,18 +191,16 @@ Responda apenas com o JSON, sem texto adicional:
 
 
 def categorize_with_gemini(transactions: List[Dict[str, Any]], 
-                          api_key: Optional[str] = None,
-                          custom_categories: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                          api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Função de conveniência para categorizar transações com Gemini
     
     Args:
         transactions: Lista de transações no formato JSON
         api_key: Chave da API Google (opcional)
-        custom_categories: Lista de categorias personalizadas (opcional)
-        
+    
     Returns:
         Lista de transações categorizadas
     """
     classifier = TransactionClassifier(api_key)
-    return classifier.categorize_transactions(transactions, custom_categories)
+    return classifier.categorize_transactions(transactions)
