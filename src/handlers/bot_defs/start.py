@@ -1,5 +1,5 @@
 from src.utils.logger import get_logger
-from src.handlers.messages import TelegramMessages
+from src.config.messages import TelegramMessages
 
 from telegram import Update
 from telegram.ext import CallbackContext

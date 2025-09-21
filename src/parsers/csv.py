@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 
 import csv
-from src.parsers.models import Expense, ParsedBankStatement
+
 from src.utils.logger import get_logger
+from src.parsers.models import Expense, ParsedBankStatement
 
 logger = get_logger(__name__)
 

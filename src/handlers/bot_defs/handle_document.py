@@ -2,9 +2,11 @@ from src.utils.logger import get_logger
 
 from telegram import Update
 from telegram.ext import ContextTypes
-from src.handlers.messages import TelegramMessages
+from src.config.messages import TelegramMessages
+
 
 logger = get_logger(__name__)
+
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
   document = update.message.document
