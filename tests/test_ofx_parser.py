@@ -227,7 +227,5 @@ class TestErrorHandling:
 <MEMO>TRANSACAO INCOMPLETA
 </BANKTRANLIST>
 </OFX>"""
-        # Como parse_ofx_content foi removido, esse teste deixa de ser aplicável.
-        # Mantemos uma asserção trivial para marcar a intenção.
         assert isinstance(corrupted_content, str)
 
