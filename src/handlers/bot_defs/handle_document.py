@@ -19,6 +19,9 @@ from src.ai.transaction_classifier import categorize_with_gemini
 logger = get_logger(__name__)
 
 
+MAX_FILE_SIZE_MB = 10
+
+
 def _detect_file_type(file_name: str):
   """Retorna 'csv' | 'ofx' ou None com base na extensão."""
   lower = (file_name or "").lower()
@@ -29,9 +32,23 @@ def _detect_file_type(file_name: str):
   return None
 
 
+def _sanitize_filename(name: str) -> str:
+  """Garante que apenas o nome-base seja usado, sem diretórios."""
+  return Path(name or "arquivo").name
+
+
 async def _download_document_to_temp(context: ContextTypes.DEFAULT_TYPE, document, dest_dir: str) -> str:
   """Baixa o arquivo do Telegram para um diretório temporário e retorna o caminho local."""
-  local_path = os.path.join(dest_dir, document.file_name or "arquivo")
+  # Verifica tamanho
+  try:
+    file_size = int(getattr(document, "file_size", 0) or 0)
+  except Exception:
+    file_size = 0
+  if file_size and file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
+    raise ValueError(f"Arquivo excede o limite de {MAX_FILE_SIZE_MB}MB")
+
+  safe_name = _sanitize_filename(document.file_name)
+  local_path = Path(dest_dir) / safe_name
   tg_file = await context.bot.get_file(document.file_id)
   await tg_file.download_to_drive(local_path)
   logger.info(f"Arquivo baixado para {local_path}")
@@ -92,7 +109,7 @@ def _build_result_payload(file_name: str, file_type: str, categorized_transactio
 
 def _write_result_json(dest_dir: str, file_stem: str, result: dict) -> str:
   """Escreve o JSON de resultado e retorna o caminho gerado."""
-  result_path = os.path.join(dest_dir, f"{file_stem}_categorized.json")
+  result_path = Path(dest_dir) / f"{file_stem}_categorized.json"
   with open(result_path, "w", encoding="utf-8") as f:
     json.dump(result, f, ensure_ascii=False, indent=2)
   return result_path
@@ -129,7 +146,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(TelegramMessages.INVALID_INPUT)
     return
   
-  file_name = document.file_name or "arquivo"
+  file_name = _sanitize_filename(document.file_name)
   user_id = update.message.from_user.id
 
   logger.info(f"Usuário {user_id} enviou o arquivo {file_name}")
@@ -169,11 +186,12 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
       if not ai_ok:
         caption_lines.append("⚠️ Categorização por AI não disponível no momento.")
 
-      await update.message.reply_document(
-        document=open(result_path, "rb"),
-        filename=Path(result_path).name,
-        caption="\n".join(caption_lines),
-      )
+      with open(result_path, "rb") as f:
+        await update.message.reply_document(
+          document=f,
+          filename=Path(result_path).name,
+          caption="\n".join(caption_lines),
+        )
 
     except Exception as e:
       logger.error(f"Erro ao processar arquivo '{file_name}': {e}")
