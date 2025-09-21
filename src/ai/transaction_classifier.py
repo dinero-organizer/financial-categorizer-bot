@@ -8,6 +8,7 @@ import os
 from typing import List, Dict, Any, Optional
 
 from src.utils.logger import get_logger
+from src.domain.categories import Category
 
 logger = get_logger(__name__)
 
@@ -26,19 +27,8 @@ class TransactionClassifier:
         if not self.api_key:
             raise ValueError("API key do Google não fornecida. Configure GOOGLE_API_KEY no ambiente.")
         
-        # Categorias padrão para transações financeiras
-        self.default_categories = [
-            "Alimentação",
-            "Transporte",
-            "Saúde",
-            "Moradia",
-            "Entretenimento",
-            "Renda",
-            "Receita",
-            "Transferências",
-            "Outros",
-            "Estudo"
-        ]
+        # Categorias padrão
+        self.default_categories = [c.value for c in Category]
         
         self.client = None
         self._initialize_client()
