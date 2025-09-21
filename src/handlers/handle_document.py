@@ -35,7 +35,10 @@ def _detect_file_type(file_name: str):
 
 def _sanitize_filename(name: str) -> str:
   """Garante que apenas o nome-base seja usado, sem diretórios."""
-  return Path(name or "arquivo").name
+  raw = name or "arquivo"
+  normalized = raw.replace("\\", "/")
+  base = normalized.split("/")[-1]
+  return base or "arquivo"
 
 
 async def _download_document_to_temp(context: ContextTypes.DEFAULT_TYPE, document, dest_dir: str) -> str:
