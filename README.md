@@ -8,6 +8,7 @@ Bot do Telegram que recebe extratos bancários em CSV/OFX, faz o parsing, conver
 - [Manipulação no Telegram](docs/TELEGRAM_HANDLING.md)
 - [Ambiente e Variáveis](docs/ENVIRONMENT.md)
 - [Parsers de Extrato](docs/PARSERS.md)
+ - [Deploy em EC2](docs/DEPLOY_EC2.md)
 
 ## Diagrama
 ```mermaid
