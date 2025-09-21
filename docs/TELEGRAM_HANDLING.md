@@ -4,7 +4,7 @@ Este domínio descreve como o bot integra com o Telegram para receber arquivos e
 
 ## Componentes
 - Ponto de entrada: `main.py` (registra `MessageHandler(filters.Document.ALL, handle_document)`).
-- Manipulador principal: `src/handlers/bot_defs/handle_document.py`.
+- Manipulador principal: `src/handlers/handle_document.py`.
 
 ## Fluxo
 1. Detectar o tipo do arquivo (`_detect_file_type`).

@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from src.handlers.bot_defs.handle_document import handle_document
-from src.handlers.bot_defs.start import start
+from src.handlers.handle_document import handle_document
+from src.handlers.start import start
 from src.utils.logger import get_logger
 
 load_dotenv()
