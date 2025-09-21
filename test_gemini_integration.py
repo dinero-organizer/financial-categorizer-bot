@@ -5,67 +5,28 @@ Execute: python test_gemini_integration.py
 """
 
 import os
+import pytest
 from src.ai.transaction_classifier import categorize_with_gemini
 
 
 def test_basic_categorization():
-    """Testa categorização básica de transações"""
-    
-    print("🧪 Testando categorização básica...")
-    
-    # Dados de teste
+    """Testa categorização básica de transações (integração real com Gemini)."""
+    if not os.getenv("GOOGLE_API_KEY"):
+        pytest.skip("GOOGLE_API_KEY não configurada; pulando teste de integração")
+
     test_transactions = [
-        {
-            "id": 1,
-            "name": "Uber *uber.com.br",
-            "value": -15.50,
-            "date": "2024-01-15"
-        },
-        {
-            "id": 2,
-            "name": "Restaurante Sushi Bar",
-            "value": -89.90,
-            "date": "2024-01-14"
-        },
-        {
-            "id": 3,
-            "name": "Salário Janeiro",
-            "value": 3500.00,
-            "date": "2024-01-05"
-        },
-        {
-            "id": 4,
-            "name": "Farmácia São João",
-            "value": -45.30,
-            "date": "2024-01-12"
-        },
-        {
-            "id": 5,
-            "name": "Netflix",
-            "value": -32.90,
-            "date": "2024-01-10"
-        }
+        {"id": 1, "name": "Uber *uber.com.br", "value": -15.50, "date": "2024-01-15"},
+        {"id": 2, "name": "Restaurante Sushi Bar", "value": -89.90, "date": "2024-01-14"},
+        {"id": 3, "name": "Salário Janeiro", "value": 3500.00, "date": "2024-01-05"},
+        {"id": 4, "name": "Farmácia São João", "value": -45.30, "date": "2024-01-12"},
+        {"id": 5, "name": "Netflix", "value": -32.90, "date": "2024-01-10"},
     ]
-    
-    try:
-        result = categorize_with_gemini(test_transactions)
-        
-        print("✅ Categorização realizada com sucesso!")
-        print("\n📊 Resultados:")
-        
-        for tx in result:
-            print(f"• {tx['name']}")
-            print(f"  💰 Valor: R$ {tx['value']:.2f}")
-            print(f"  📂 Categoria: {tx['category']}")
-            print(f"  🎯 Confiança: {tx.get('categorization_confidence', 'N/A')}")
-            print(f"  💭 Justificativa: {tx.get('categorization_reasoning', 'N/A')}")
-            print()
-        
-        return True
-        
-    except Exception as e:
-        print(f"❌ Erro na categorização: {e}")
-        return False
+
+    result = categorize_with_gemini(test_transactions)
+
+    assert isinstance(result, list)
+    assert len(result) == len(test_transactions)
+    assert all("category" in tx for tx in result)
 
 
 def check_environment():
