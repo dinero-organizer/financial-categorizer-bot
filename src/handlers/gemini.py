@@ -1,5 +1,5 @@
 """
-Auxiliares AWS para a função Lambda
+Auxiliar de integração com Gemini
 """
 
 from src.ai.transaction_classifier import categorize_with_gemini

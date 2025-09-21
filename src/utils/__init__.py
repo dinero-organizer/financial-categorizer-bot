@@ -1,5 +1,5 @@
 """
-Utilidades simples para a função Lambda
+Utilidades simples para a diversos fins
 """
 
 
