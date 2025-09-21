@@ -19,8 +19,3 @@ Este domínio documenta os parsers para arquivos CSV e OFX.
 
 ## Modelos
 - `src/parsers/models.py`: define `Expense` e `ParsedBankStatement`.
-
-## Fontes
-- Código: `src/parsers/csv.py`, `src/parsers/ofx.py`, `src/parsers/models.py`.
-- Documentação: módulo `csv` da biblioteca padrão (`https://docs.python.org/3/library/csv.html`), `ofxtools` (`https://ofxtools.readthedocs.io/`).
-

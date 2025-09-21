@@ -19,8 +19,3 @@ Este domínio descreve como o bot integra com o Telegram para receber arquivos e
 
 ## Limpeza de temporários
 O manipulador decide se remove os arquivos temporários com base em `_should_cleanup_tmp()`, que considera as variáveis de ambiente `DEBUG` e `APP_ENV`/`ENVIRONMENT`.
-
-## Fontes
-- Código: `main.py`, `src/handlers/bot_defs/handle_document.py`.
-- Documentação: `python-telegram-bot` (`https://docs.python-telegram-bot.org/`).
-

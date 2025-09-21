@@ -13,8 +13,3 @@ Configurações necessárias para execução local e produção.
 
 ## Dependências
 As bibliotecas necessárias estão em `requirements.txt` (por exemplo, `python-telegram-bot`, `google-generativeai`, `ofxtools`, `python-dotenv`).
-
-## Fontes
-- Código: `main.py`, `src/ai/transaction_classifier.py`, `src/handlers/bot_defs/handle_document.py`, `requirements.txt`.
-- Documentação: `python-dotenv` (`https://pypi.org/project/python-dotenv/`).
-
