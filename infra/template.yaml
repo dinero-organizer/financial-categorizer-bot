@@ -7,12 +7,35 @@ Parameters:
     Type: String
     Description: Token do bot do Telegram
     NoEcho: true
-  
+
   Environment:
     Type: String
     Default: dev
-    AllowedValues: [dev, staging, prod]
+    AllowedValues:
+      - dev
+      - staging
+      - prod
     Description: Ambiente de deployment
+
+  GoogleApiKey:
+    Type: String
+    Description: Chave da API Google (Gemini)
+    NoEcho: true
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+    Description: Tipo da instância EC2
+
+  RepoUrl:
+    Type: String
+    Default: https://github.com/placeholder/financial-categorizer-bot.git
+    Description: URL do repositório Git com o código do bot
 
 Globals:
   Function:
@@ -24,10 +47,134 @@ Globals:
         ENVIRONMENT: !Ref Environment
 
 Resources:
+  # Bucket S3 para uploads temporários com lifecycle
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpirarUploads
+            Status: Enabled
+            Prefix: uploads/
+            ExpirationInDays: 30
+
   # CloudWatch Log Group
   BotLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/financial-bot-${Environment}"
+      LogGroupName: !Sub /aws/lambda/financial-bot-${Environment}
       RetentionInDays: 14
 
+  # IAM Role para instância EC2 (S3 + CloudWatch + SSM)
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: S3UploadsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt UploadsBucket.Arn
+                  - !Sub ${UploadsBucket.Arn}/*
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2InstanceRole
+
+  # Launch Template da instância do bot
+  BotLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt EC2InstanceProfile.Arn
+        InstanceType: !Ref InstanceType
+        ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64}}'
+        UserData: !Base64
+          Fn::Sub: |
+            #!/bin/bash
+            set -euo pipefail
+            dnf update -y
+            dnf install -y python3.11 git amazon-cloudwatch-agent
+            id -u finbot &>/dev/null || useradd -m -s /bin/bash finbot
+            install -d -o finbot -g finbot /opt/finbot
+            cd /opt/finbot
+            su - finbot -c "git clone ${RepoUrl} app || (cd app && git pull)"
+            su - finbot -c "python3.11 -m venv /opt/finbot/app/.venv"
+            su - finbot -c "/opt/finbot/app/.venv/bin/python -m pip install --upgrade pip"
+            su - finbot -c "/opt/finbot/app/.venv/bin/python -m pip install -r /opt/finbot/app/requirements.txt"
+            cat >/etc/finbot.env <<ENVEOF
+            BOT_TOKEN_TELEGRAM=${TelegramBotToken}
+            GOOGLE_API_KEY=${GoogleApiKey}
+            APP_ENV=${Environment}
+            S3_BUCKET_UPLOADS=${UploadsBucket}
+            ENVEOF
+            cat >/etc/systemd/system/finbot.service <<'SYSEOF'
+            [Unit]
+            Description=Financial Categorizer Bot
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            WorkingDirectory=/opt/finbot/app
+            EnvironmentFile=/etc/finbot.env
+            ExecStart=/opt/finbot/app/.venv/bin/python -m main
+            Restart=always
+            User=finbot
+
+            [Install]
+            WantedBy=multi-user.target
+            SYSEOF
+            systemctl daemon-reload
+            systemctl enable --now finbot
+            mkdir -p /opt/aws/amazon-cloudwatch-agent/etc
+            cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CWAE
+            {
+              "logs": {
+                "logs_collected": {
+                  "files": {
+                    "collect_list": [
+                      {"file_path": "/var/log/messages", "log_group_name": "/financial-bot-${Environment}", "log_stream_name": "{instance_id}/messages"},
+                      {"file_path": "/var/log/cloud-init-output.log", "log_group_name": "/financial-bot-${Environment}", "log_stream_name": "{instance_id}/cloud-init"}
+                    ]
+                  }
+                }
+              }
+            }
+            CWAE
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+
+  # Instância EC2 do bot
+  BotInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref BotLaunchTemplate
+        Version: !GetAtt BotLaunchTemplate.LatestVersionNumber

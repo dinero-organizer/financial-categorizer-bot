@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          python -m pytest -q
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [ test ]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install SAM CLI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aws-sam-cli
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: SAM build
+        run: |
+          sam build --template infra/template.yaml --build-dir infra/.aws-sam/build
+      - name: SAM deploy (prod)
+        run: |
+          sam deploy \
+            --stack-name financial-bot-prod \
+            --resolve-s3 \
+            --no-confirm-changeset \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              Environment=prod \
+              TelegramBotToken=${{ secrets.BOT_TOKEN_TELEGRAM }} \
+              GoogleApiKey=${{ secrets.GOOGLE_API_KEY }} \
+              RepoUrl=https://github.com/dinero-organizer/financial-categorizer-bot.git
+
+

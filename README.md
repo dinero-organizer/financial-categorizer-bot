@@ -39,3 +39,6 @@ flowchart TB
   classDef small font-size:12px;
   class bot,handler,tmp,csv,ofx,stmt,map,ai,result,reply,env,clean small;
 ```
+
+## Infraestrutura AWS
+![Infraestrutura AWS](docs/assets/aws-infrastructure.png)
