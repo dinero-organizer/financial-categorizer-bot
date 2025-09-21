@@ -20,7 +20,7 @@ Globals:
     Runtime: python3.11
     Environment:
       Variables:
-        TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+        BOT_TOKEN_TELEGRAM: !Ref TelegramBotToken
         ENVIRONMENT: !Ref Environment
 
 Resources:

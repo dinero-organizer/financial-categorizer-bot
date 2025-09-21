@@ -52,7 +52,7 @@ jobs:
           chmod +x deploy.sh
           ./deploy.sh ${{ inputs.environment }}
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BOT_TOKEN_TELEGRAM: ${{ secrets.BOT_TOKEN_TELEGRAM }}
           
       - name: Get deployment outputs
         id: get-outputs
