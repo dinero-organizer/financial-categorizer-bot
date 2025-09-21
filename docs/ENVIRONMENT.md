@@ -5,6 +5,7 @@ Configurações necessárias para execução local e produção.
 ## Variáveis de ambiente
 - `BOT_TOKEN_TELEGRAM`: token do bot do Telegram. Usado em `main.py`.
 - `GOOGLE_API_KEY`: chave da API do Google para o Gemini. Usada em `src/ai/transaction_classifier.py`.
+- `S3_BUCKET_UPLOADS`: bucket S3 para armazenar uploads temporários.
 - `DEBUG`: quando definido como `1`, `true`, `yes` ou `on`, ativa modo de depuração (mantém temporários).
 - `APP_ENV`/`ENVIRONMENT`: quando `production`/`prod`, desativa modo de depuração por padrão.
 

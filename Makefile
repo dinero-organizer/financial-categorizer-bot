@@ -16,5 +16,9 @@ run:
 test:
 	.venv\Scripts\python.exe -m pytest -q
 
+setup-aws:
+	@echo Installing AWS SDK and logging extras...
+	.venv\Scripts\python.exe -m pip install boto3 watchtower
+
 clean:
 	rmdir /s /q .venv

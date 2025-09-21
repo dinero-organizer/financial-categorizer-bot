@@ -14,6 +14,7 @@ import shutil
 from src.parsers.csv import parse_csv_bank_statement
 from src.parsers.ofx import parse_ofx_file
 from src.ai.transaction_classifier import categorize_with_gemini
+import boto3
 
 
 logger = get_logger(__name__)
@@ -139,6 +140,17 @@ def _should_cleanup_tmp() -> bool:
   return not _is_debug_mode()
 
 
+def _upload_to_s3(local_path: Path, user_id: int, file_name: str) -> str:
+  bucket = os.getenv("S3_BUCKET_UPLOADS")
+  if not bucket:
+    return ""
+  
+  s3 = boto3.client("s3")
+  key = f"uploads/{user_id}/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}/{file_name}"
+  s3.upload_file(str(local_path), bucket, key)
+  return f"s3://{bucket}/{key}"
+
+
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
   document = update.message.document
 
@@ -165,6 +177,8 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
       # Baixa o arquivo recebido do Telegram
       local_path = await _download_document_to_temp(context, document, tmp_dir)
+
+      _ = _upload_to_s3(Path(local_path), user_id, file_name)
 
       # Faz o parse de acordo com o tipo
       statement = _parse_file_to_statement(local_path, file_type)
