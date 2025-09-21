@@ -15,18 +15,17 @@ from src.utils.logger import get_logger
 load_dotenv()
 logger = get_logger(__name__)
 
-TOKEN = os.getenv("BOT_TOKEN_TELEGRAM")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+REQUIRED_ENV_VARS = [
+    "BOT_TOKEN_TELEGRAM",
+    "GOOGLE_API_KEY",
+]
 
-missing_env = []
-if not TOKEN:
-    missing_env.append("BOT_TOKEN_TELEGRAM")
-if not GOOGLE_API_KEY:
-    missing_env.append("GOOGLE_API_KEY")
-
+missing_env = [name for name in REQUIRED_ENV_VARS if not os.getenv(name)]
 if missing_env:
     logger.error(f"Variáveis de ambiente ausentes: {', '.join(missing_env)}")
     raise SystemExit(1)
+
+TOKEN = os.getenv("BOT_TOKEN_TELEGRAM")
 
 
 def main():
