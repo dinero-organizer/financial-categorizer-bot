@@ -81,9 +81,9 @@ class CSVBankParser:
             logger.error(f"Erro ao converter valor '{value_str}': {e}")
             return 0.0
 
-    def detect_csv_format(self, file_path: str, encoding: str = 'utf-8') -> Dict[str, Any]:
+    def detect_csv_format(self, file_path: str, encoding: str = 'utf-8-sig') -> Dict[str, Any]:
         """Detecta o formato do CSV automaticamente"""
-        with open(file_path, 'r', encoding=encoding) as file:
+        with open(file_path, 'r', encoding=encoding, newline='') as file:
             # Lê as primeiras linhas para detectar o formato
             sample = file.read(1024)
             file.seek(0)
@@ -155,7 +155,7 @@ class CSVBankParser:
 
         return mapping
 
-    def parse_file(self, file_path: str, encoding: str = 'utf-8') -> ParsedBankStatement:
+    def parse_file(self, file_path: str, encoding: str = 'utf-8-sig') -> ParsedBankStatement:
         """Parse do arquivo CSV bancário"""
         logger.info(f"Iniciando parse do arquivo: {file_path}")
 
@@ -172,7 +172,7 @@ class CSVBankParser:
 
             expenses = []
 
-            with open(file_path, 'r', encoding=encoding) as file:
+            with open(file_path, 'r', encoding=encoding, newline='') as file:
                 reader = csv.reader(file, delimiter=csv_format['delimiter'])
 
                 # Pula cabeçalho
@@ -265,7 +265,7 @@ class CSVBankParser:
         )
 
 
-def parse_csv_bank_statement(file_path: str, encoding: str = 'utf-8') -> ParsedBankStatement:
+def parse_csv_bank_statement(file_path: str, encoding: str = 'utf-8-sig') -> ParsedBankStatement:
     """Função de conveniência para fazer parse de extrato bancário CSV"""
     parser = CSVBankParser()
     return parser.parse_file(file_path, encoding)
