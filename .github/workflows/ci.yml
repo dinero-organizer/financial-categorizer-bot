@@ -76,4 +76,23 @@ jobs:
               ParameterKey=GoogleApiKey,ParameterValue=${{ secrets.GOOGLE_API_KEY }} \
               ParameterKey=RepoUrl,ParameterValue=https://github.com/dinero-organizer/financial-categorizer-bot.git
 
+      - name: Wait for instance and start service
+        run: |
+          IID=$(aws cloudformation describe-stack-resources \
+            --region ${{ secrets.AWS_REGION }} \
+            --stack-name financial-bot-prod \
+            --query "StackResources[?LogicalResourceId=='BotInstance'].PhysicalResourceId" \
+            --output text)
+          echo "Instance: $IID"
+          aws ec2 wait instance-status-ok --region ${{ secrets.AWS_REGION }} --instance-ids "$IID"
+          CMD_ID=$(aws ssm send-command \
+            --region ${{ secrets.AWS_REGION }} \
+            --instance-ids "$IID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='["systemctl status finbot --no-pager || sudo systemctl restart finbot","sleep 2","systemctl status finbot --no-pager"]' \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command: $CMD_ID"
+          aws ssm wait command-executed --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --instance-id "$IID"
+          aws ssm list-command-invocations --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --details
+
 
