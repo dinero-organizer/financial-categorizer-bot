@@ -11,12 +11,14 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 import shutil
+import csv
 
 from src.parsers.csv import parse_csv_bank_statement
 from src.parsers.ofx import parse_ofx_file
 from src.ai.transaction_classifier import categorize_with_gemini
-import boto3
+from src.utils import format_currency
 
+import boto3
 
 logger = get_logger(__name__)
 
@@ -120,6 +122,59 @@ def _write_result_json(dest_dir: str, file_stem: str, result: dict) -> str:
   return result_path
 
 
+def _write_result_csv(dest_dir: str, file_stem: str, categorized_transactions: list) -> str:
+  """Escreve um CSV com as transações categorizadas e retorna o caminho gerado."""
+  csv_path = Path(dest_dir) / f"{file_stem}_categorized.csv"
+  headers = [
+    "id",
+    "name",
+    "value",
+    "date",
+    "category",
+    "categorization_confidence",
+    "categorization_reasoning",
+  ]
+  with open(csv_path, "w", encoding="utf-8", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=headers)
+    writer.writeheader()
+    for tx in categorized_transactions:
+      writer.writerow({
+        "id": tx.get("id"),
+        "name": tx.get("name", ""),
+        "value": tx.get("value", 0.0),
+        "date": tx.get("date", ""),
+        "category": tx.get("category", ""),
+        "categorization_confidence": tx.get("categorization_confidence", ""),
+        "categorization_reasoning": tx.get("categorization_reasoning", ""),
+      })
+  return str(csv_path)
+
+
+def _build_summary_messages(categorized_transactions: list) -> list[str]:
+  """Gera mensagens com lista de transações categorizadas em blocos seguros."""
+  lines = []
+  for tx in categorized_transactions:
+    name = escape_markdown(str(tx.get("name", "")), version=1)
+    category = escape_markdown(str(tx.get("category", "")), version=1)
+    date_str = escape_markdown(str(tx.get("date", "")), version=1)
+    value = tx.get("value", 0.0)
+    value_str = format_currency(value)
+    lines.append(f"- {date_str} | {name} | {value_str} | {category}")
+
+  messages = []
+  current = ""
+  for line in lines:
+    # 3800 approx to stay under Telegram 4096 chars limit with some margin
+    if len(current) + len(line) + 1 > 3800:
+      messages.append(current)
+      current = line
+    else:
+      current = (current + "\n" + line) if current else line
+  if current:
+    messages.append(current)
+  return messages
+
+
 def _is_debug_mode() -> bool:
   """Determina se estamos em modo de debug via variáveis de ambiente.
 
@@ -194,23 +249,30 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
       # Chama o classificador (Gemini)
       categorized_transactions, ai_ok = _categorize_with_ai(transactions)
 
-      # Monta resultado e envia ao usuário
+      # Monta resultado
       result = _build_result_payload(file_name, file_type, categorized_transactions)
-      result_path = _write_result_json(tmp_dir, Path(file_name).stem, result)
+      # Persistência (JSON para debug e CSV para usuário)
+      _ = _write_result_json(tmp_dir, Path(file_name).stem, result)
+      csv_path = _write_result_csv(tmp_dir, Path(file_name).stem, categorized_transactions)
 
       caption_lines = [
         "✅ Processamento concluído!",
         f"Transações: {len(categorized_transactions)}",
+        "CSV anexado com os resultados.",
       ]
       if not ai_ok:
         caption_lines.append("⚠️ Categorização por AI não disponível no momento.")
 
-      with open(result_path, "rb") as f:
+      with open(csv_path, "rb") as f:
         await update.message.reply_document(
           document=f,
-          filename=Path(result_path).name,
+          filename=Path(csv_path).name,
           caption="\n".join(caption_lines),
         )
+
+      # Envia resumo em texto em blocos
+      for chunk in _build_summary_messages(categorized_transactions):
+        await update.message.reply_text(chunk)
 
     except Exception as e:
       logger.error(f"Erro ao processar arquivo '{file_name}': {e}")

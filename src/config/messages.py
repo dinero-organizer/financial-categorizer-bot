@@ -21,7 +21,7 @@ class TelegramMessages:
     # Confirmações de recebimento
     RECEIVED_FILE = (
         "✅ Arquivo **{file_name}** recebido com sucesso!\n\n"
-        "🔍 Analisando o conteúdo..."
+        "🔍 Analisando o conteúdo...\n\n"
     )
 
     DETECTED_TYPE = "📂 Tipo de arquivo detectado: **{file_type}**."
