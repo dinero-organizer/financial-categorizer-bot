@@ -129,7 +129,6 @@ As seguintes categorias são usadas por padrão:
 - **Vestuário**: Roupas, sapatos, acessórios
 - **Investimentos**: Aplicações, ações, fundos
 - **Salário**: Rendimentos, pagamentos
-- **Transferências**: PIX, TED, DOC
 - **Impostos**: IPTU, IPVA, IR
 - **Seguros**: Seguro de vida, carro, saúde
 - **Outros**: Categorias não classificadas

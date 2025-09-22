@@ -106,6 +106,9 @@ IMPORTANTE:
 - Para cada transação, forneça a categoria mais adequada
 - Utilize o campo 'id' de cada transação para identificar no resultado
 - Se uma transação não se encaixar bem em nenhuma categoria, use "Outros"
+- NÃO use categorias de tipo de transação (ex.: "Transferências", "Receita")
+- Classifique por finalidade/tema (ex.: alimentação, transporte, saúde etc.)
+- Créditos (valor positivo) podem ser "Renda" (ex.: salário). Débitos (valor negativo) não podem ser "Renda"
 
 Formato da resposta:
 {{

@@ -128,11 +128,9 @@ def demonstrate_categorization():
     categorization_rules = {
         "SUPERMERCADO": "Alimentação",
         "POSTO": "Transporte",
-        "SALÁRIO": "Receita",
         "FARMÁCIA": "Saúde",
         "ALUGUEL": "Moradia",
         "NETFLIX": "Entretenimento",
-        "PIX": "Transferências"
     }
     
     statement = create_sample_data()

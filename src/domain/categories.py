@@ -7,7 +7,5 @@ class Category(StrEnum):
     MORADIA = "Moradia"
     ENTRETENIMENTO = "Entretenimento"
     RENDA = "Renda"
-    RECEITA = "Receita"
-    TRANSFERENCIAS = "Transferências"
     ESTUDO = "Estudo"
     OUTROS = "Outros"
