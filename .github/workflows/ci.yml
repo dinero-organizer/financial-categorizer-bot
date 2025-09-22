@@ -63,9 +63,9 @@ jobs:
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM \
             --parameter-overrides \
-              Environment=prod \
-              TelegramBotToken=${{ secrets.BOT_TOKEN_TELEGRAM }} \
-              GoogleApiKey=${{ secrets.GOOGLE_API_KEY }} \
-              RepoUrl=https://github.com/dinero-organizer/financial-categorizer-bot.git
+              ParameterKey=Environment,ParameterValue=prod \
+              ParameterKey=TelegramBotToken,ParameterValue=${{ secrets.BOT_TOKEN_TELEGRAM }} \
+              ParameterKey=GoogleApiKey,ParameterValue=${{ secrets.GOOGLE_API_KEY }} \
+              ParameterKey=RepoUrl,ParameterValue=https://github.com/dinero-organizer/financial-categorizer-bot.git
 
 

@@ -49,8 +49,17 @@ jobs:
       - name: Deploy to ${{ inputs.environment }}
         working-directory: infra
         run: |
-          chmod +x deploy.sh
-          ./deploy.sh ${{ inputs.environment }}
+          sam build --template template.yaml --build-dir .aws-sam/build
+          sam deploy \
+            --stack-name financial-bot-${{ inputs.environment }} \
+            --resolve-s3 \
+            --no-confirm-changeset \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              ParameterKey=Environment,ParameterValue=${{ inputs.environment }} \
+              ParameterKey=TelegramBotToken,ParameterValue=${{ secrets.BOT_TOKEN_TELEGRAM }} \
+              ParameterKey=GoogleApiKey,ParameterValue=${{ secrets.GOOGLE_API_KEY }} \
+              ParameterKey=RepoUrl,ParameterValue=https://github.com/dinero-organizer/financial-categorizer-bot.git
         env:
           BOT_TOKEN_TELEGRAM: ${{ secrets.BOT_TOKEN_TELEGRAM }}
           
