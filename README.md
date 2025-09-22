@@ -24,7 +24,7 @@ flowchart TB
   ofx --> stmt
   stmt --> map[Mapear p/ JSON<br/>de transacoes]
   map --> ai[Gemini<br/>categorize_with_gemini]
-  ai --> result[JSON<br/>categorizado]
+  ai --> result[CSV<br/>categorizado]
   result --> reply[reply_<br/>document]
 
   subgraph Ambiente

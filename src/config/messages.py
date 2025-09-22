@@ -32,3 +32,8 @@ class TelegramMessages:
         "👉 Somente arquivos nos formatos **CSV** ou **OFX** são aceitos.\n"
         "Por favor, tente novamente com um desses formatos. 😉"
     )
+
+    # Erros genéricos
+    ERROR_GENERIC = (
+        "❌ Ocorreu um erro inesperado ao processar sua solicitação. Tente novamente em instantes."
+    )
