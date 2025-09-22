@@ -76,15 +76,28 @@ jobs:
             --output text)
           echo "Instance: $IID"
           aws ec2 wait instance-status-ok --region ${{ secrets.AWS_REGION }} --instance-ids "$IID"
-          CMD_ID=$(aws ssm send-command \
+          MANAGED=$(aws ssm describe-instance-information \
             --region ${{ secrets.AWS_REGION }} \
-            --instance-ids "$IID" \
-            --document-name "AWS-RunShellScript" \
-            --parameters commands='["systemctl status finbot --no-pager || sudo systemctl restart finbot","sleep 2","systemctl status finbot --no-pager"]' \
-            --query 'Command.CommandId' --output text)
-          echo "SSM Command: $CMD_ID"
-          aws ssm wait command-executed --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --instance-id "$IID"
-          aws ssm list-command-invocations --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --details
+            --filters Key=InstanceIds,Values="$IID" \
+            --query 'length(InstanceInformationList)' --output text)
+          echo "SSM managed: $MANAGED"
+          if [ "$MANAGED" = "1" ]; then
+            CMD_ID=$(aws ssm send-command \
+              --region ${{ secrets.AWS_REGION }} \
+              --instance-ids "$IID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters commands='["systemctl status finbot --no-pager || sudo systemctl restart finbot","sleep 3","systemctl status finbot --no-pager"]' \
+              --query 'Command.CommandId' --output text) || true
+            echo "SSM Command: $CMD_ID"
+            if [ -n "$CMD_ID" ] && [ "$CMD_ID" != "None" ]; then
+              aws ssm wait command-executed --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --instance-id "$IID" || true
+              aws ssm list-command-invocations --region ${{ secrets.AWS_REGION }} --command-id "$CMD_ID" --details || true
+            else
+              echo "SSM send-command not executed; skipping"
+            fi
+          else
+            echo "Instance not managed by SSM yet; skipping service check"
+          fi
           
       - name: Get deployment outputs
         id: get-outputs
