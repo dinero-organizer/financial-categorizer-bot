@@ -6,7 +6,7 @@ import os
 
 from dotenv import load_dotenv
 from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, Defaults
 
 from src.handlers.handle_document import handle_document
 from src.handlers.start import start
@@ -29,10 +29,11 @@ TOKEN = os.getenv("BOT_TOKEN_TELEGRAM")
 
 
 def main():
+    defaults = Defaults(parse_mode=ParseMode.MARKDOWN)
     app = (
         ApplicationBuilder()
         .token(TOKEN)
-        .parse_mode(ParseMode.MARKDOWN)
+        .defaults(defaults)
         .build()
     )
 
