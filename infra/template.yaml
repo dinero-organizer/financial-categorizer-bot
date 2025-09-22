@@ -126,10 +126,11 @@ Resources:
             id -u finbot &>/dev/null || useradd -m -s /bin/bash finbot
             install -d -o finbot -g finbot /opt/finbot
             cd /opt/finbot
-            su - finbot -c "git clone ${RepoUrl} app || (cd app && git pull)"
-            su - finbot -c "python3.11 -m venv /opt/finbot/app/.venv"
-            su - finbot -c "/opt/finbot/app/.venv/bin/python -m pip install --upgrade pip"
-            su - finbot -c "/opt/finbot/app/.venv/bin/python -m pip install -r /opt/finbot/app/requirements.txt"
+            if [ -d app/.git ]; then (cd app && git pull); else git clone ${RepoUrl} app; fi
+            python3.11 -m venv /opt/finbot/app/.venv
+            /opt/finbot/app/.venv/bin/python -m pip install --upgrade pip
+            /opt/finbot/app/.venv/bin/pip install -r /opt/finbot/app/requirements.txt
+            chown -R finbot:finbot /opt/finbot
             cat >/etc/finbot.env <<ENVEOF
             BOT_TOKEN_TELEGRAM=${TelegramBotToken}
             GOOGLE_API_KEY=${GoogleApiKey}
