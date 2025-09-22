@@ -10,6 +10,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 
 from src.handlers.handle_document import handle_document
 from src.handlers.start import start
+from src.handlers.error_handler import on_error
 from src.utils.logger import get_logger
 
 load_dotenv()
@@ -40,6 +41,8 @@ def main():
     app.add_handler(CommandHandler("start", start))
 
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+
+    app.add_error_handler(on_error)
 
     logger.info("Iniciando o Financial Categorizer Bot...")
 
