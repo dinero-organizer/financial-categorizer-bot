@@ -52,6 +52,7 @@ jobs:
           sam build --template template.yaml --build-dir .aws-sam/build
           sam deploy \
             --stack-name financial-bot-${{ inputs.environment }} \
+            --template-file .aws-sam/build/template.yaml \
             --resolve-s3 \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM \

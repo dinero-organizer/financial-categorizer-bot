@@ -53,15 +53,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: SAM build
+        working-directory: infra
         run: |
-          sam build --template infra/template.yaml --build-dir infra/.aws-sam/build
+          sam build --template template.yaml --build-dir .aws-sam/build
       - name: SAM deploy (prod)
+        working-directory: infra
         run: |
           sam deploy \
             --stack-name financial-bot-prod \
             --resolve-s3 \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM \
+            --template-file .aws-sam/build/template.yaml \
             --parameter-overrides \
               ParameterKey=Environment,ParameterValue=prod \
               ParameterKey=TelegramBotToken,ParameterValue=${{ secrets.BOT_TOKEN_TELEGRAM }} \
