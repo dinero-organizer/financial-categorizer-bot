@@ -3,6 +3,7 @@ from src.utils.logger import get_logger
 from telegram import Update
 from telegram.ext import ContextTypes
 from src.config.messages import TelegramMessages
+from telegram.helpers import escape_markdown
 
 import os
 import json
@@ -167,10 +168,11 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
   logger.info(f"Usuário {user_id} enviou o arquivo {file_name}")
 
   file_type = _detect_file_type(file_name)
+  safe_display_name = escape_markdown(file_name, version=1)
 
   if file_type in ("csv", "ofx"):
     await update.message.reply_text(
-      TelegramMessages.RECEIVED_FILE.format(file_name=file_name)
+      TelegramMessages.RECEIVED_FILE.format(file_name=safe_display_name)
       + TelegramMessages.DETECTED_TYPE.format(file_type=file_type.upper())
     )
 
@@ -227,5 +229,5 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
   else:
     await update.message.reply_text(
-      TelegramMessages.UNSUPPORTED_FILE.format(file_name=file_name)
+      TelegramMessages.UNSUPPORTED_FILE.format(file_name=safe_display_name)
     )
