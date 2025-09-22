@@ -4,6 +4,7 @@ Classificador de transações usando Google Gemini
 """
 
 import json
+import re
 import os
 from typing import List, Dict, Any, Optional
 
@@ -134,8 +135,10 @@ Responda apenas com o JSON, sem texto adicional:
                                        original_transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Processa a resposta do Gemini e aplica as categorizações"""
         try:
+            # Remove cercas de código markdown e extrai apenas o JSON
+            cleaned = self._extract_json_from_text(response)
             # Parse da resposta JSON
-            result = json.loads(response)
+            result = json.loads(cleaned)
             categorizations = result.get('categorizations', [])
             
             # Cria um mapa de categorizações por id
@@ -171,6 +174,29 @@ Responda apenas com o JSON, sem texto adicional:
         except Exception as e:
             logger.error(f"Erro ao processar categorizações: {e}")
             return [self._add_default_category(tx) for tx in original_transactions]
+
+    def _extract_json_from_text(self, text: str) -> str:
+        """Extrai o bloco JSON de uma string possivelmente cercada por markdown.
+
+        Aceita formatos como:
+        ```json
+        { ... }
+        ```
+        ou texto com JSON embutido. Se não encontrar, retorna o texto original.
+        """
+        if not text:
+            return text
+        text = text.strip()
+        fence_pattern = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
+        match = fence_pattern.search(text)
+        if match:
+            return match.group(1).strip()
+        # fallback: tenta recortar do primeiro '{' até o último '}'
+        start = text.find('{')
+        end = text.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            return text[start:end+1].strip()
+        return text
     
     def _add_default_category(self, transaction: Dict[str, Any]) -> Dict[str, Any]:
         """Adiciona categoria padrão a uma transação"""
