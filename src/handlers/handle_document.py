@@ -19,6 +19,7 @@ from src.ai.transaction_classifier import categorize_with_gemini
 from src.utils import format_currency
 
 import boto3
+import hashlib
 
 logger = get_logger(__name__)
 
@@ -42,6 +43,15 @@ def _sanitize_filename(name: str) -> str:
   normalized = raw.replace("\\", "/")
   base = normalized.split("/")[-1]
   return base or "arquivo"
+
+
+def _compute_file_sha256(file_path: str) -> str:
+  """Calcula o SHA-256 do arquivo para uso como chave de cache."""
+  hasher = hashlib.sha256()
+  with open(file_path, "rb") as f:
+    for chunk in iter(lambda: f.read(1024 * 1024), b""):
+      hasher.update(chunk)
+  return hasher.hexdigest()
 
 
 async def _download_document_to_temp(context: ContextTypes.DEFAULT_TYPE, document, dest_dir: str) -> str:
@@ -150,6 +160,34 @@ def _write_result_csv(dest_dir: str, file_stem: str, categorized_transactions: l
   return str(csv_path)
 
 
+def _cache_bucket_name() -> str:
+  """Retorna o bucket S3 usado para cache (reutiliza o mesmo de uploads)."""
+  return os.getenv("S3_BUCKET_UPLOADS", "")
+
+
+def _cache_key_for_processed(user_id: int, file_hash: str, file_name: str) -> str:
+  """Monta a chave S3 determinística para o CSV processado (cache)."""
+  stem = Path(file_name).stem
+  return f"cache/processed/{user_id}/{file_hash}/{stem}_categorized.csv"
+
+
+def _s3_object_exists(bucket: str, key: str) -> bool:
+  if not bucket or not key:
+    return False
+  try:
+    s3 = boto3.client("s3")
+    s3.head_object(Bucket=bucket, Key=key)
+    return True
+  except Exception:
+    return False
+
+
+def _download_from_s3(bucket: str, key: str, dest_path: str) -> str:
+  s3 = boto3.client("s3")
+  s3.download_file(bucket, key, dest_path)
+  return dest_path
+
+
 def _build_summary_messages(categorized_transactions: list) -> list[str]:
   """Gera mensagens com lista de transações categorizadas em blocos seguros."""
   lines = []
@@ -210,6 +248,16 @@ def _upload_to_s3(local_path: Path, user_id: int, file_name: str) -> str:
   return f"s3://{bucket}/{key}"
 
 
+def _upload_processed_to_s3(local_csv_path: Path, user_id: int, file_hash: str, file_name: str) -> str:
+  bucket = _cache_bucket_name()
+  if not bucket:
+    return ""
+  key = _cache_key_for_processed(user_id, file_hash, file_name)
+  s3 = boto3.client("s3")
+  s3.upload_file(str(local_csv_path), bucket, key)
+  return f"s3://{bucket}/{key}"
+
+
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
   document = update.message.document
 
@@ -238,7 +286,28 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
       # Baixa o arquivo recebido do Telegram
       local_path = await _download_document_to_temp(context, document, tmp_dir)
 
+      # Armazena o original (best effort)
       _ = _upload_to_s3(Path(local_path), user_id, file_name)
+
+      # Verifica cache em S3 pelo hash do arquivo
+      file_hash = _compute_file_sha256(local_path)
+      cache_bucket = _cache_bucket_name()
+      cache_key = _cache_key_for_processed(user_id, file_hash, file_name)
+      if _s3_object_exists(cache_bucket, cache_key):
+        cached_local = str(Path(tmp_dir) / Path(cache_key).name)
+        _download_from_s3(cache_bucket, cache_key, cached_local)
+
+        caption_lines = [
+          "✅ Processamento concluído (cache)!",
+          "Arquivo já processado anteriormente. CSV anexado do cache.",
+        ]
+        with open(cached_local, "rb") as f:
+          await update.message.reply_document(
+            document=f,
+            filename=Path(cached_local).name,
+            caption="\n".join(caption_lines),
+          )
+        return
 
       # Faz o parse de acordo com o tipo
       statement = _parse_file_to_statement(local_path, file_type)
@@ -254,6 +323,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
       # Persistência (JSON para debug e CSV para usuário)
       _ = _write_result_json(tmp_dir, Path(file_name).stem, result)
       csv_path = _write_result_csv(tmp_dir, Path(file_name).stem, categorized_transactions)
+
+      # Publica CSV processado no cache determinístico
+      _ = _upload_processed_to_s3(Path(csv_path), user_id, file_hash, file_name)
 
       caption_lines = [
         "✅ Processamento concluído!",
