@@ -52,10 +52,37 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Delete existing stack (prod)
+      - name: Clean and delete existing stack (prod)
         run: |
-          sam delete --stack-name financial-bot-prod --region ${{ secrets.AWS_REGION }} --no-prompts || true
-          aws cloudformation wait stack-delete-complete --region ${{ secrets.AWS_REGION }} --stack-name financial-bot-prod || true
+          set -e
+          STACK=financial-bot-prod
+          REGION=${{ secrets.AWS_REGION }}
+          if aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK" >/dev/null 2>&1; then
+            # Empty S3 bucket if present to avoid DELETE_FAILED
+            BUCKET=$(aws cloudformation describe-stack-resources \
+              --region "$REGION" \
+              --stack-name "$STACK" \
+              --logical-resource-id UploadsBucket \
+              --query "StackResources[0].PhysicalResourceId" \
+              --output text || echo "")
+            if [ -n "$BUCKET" ] && [ "$BUCKET" != "None" ]; then
+              aws s3 rm "s3://$BUCKET" --recursive || true
+            fi
+            # Terminate EC2 instance if it exists
+            IID=$(aws cloudformation describe-stack-resources \
+              --region "$REGION" \
+              --stack-name "$STACK" \
+              --logical-resource-id BotInstance \
+              --query "StackResources[0].PhysicalResourceId" \
+              --output text || echo "")
+            if [ -n "$IID" ] && [ "$IID" != "None" ]; then
+              aws ec2 terminate-instances --region "$REGION" --instance-ids "$IID" || true
+              aws ec2 wait instance-terminated --region "$REGION" --instance-ids "$IID" || true
+            fi
+            # Delete stack and wait
+            sam delete --stack-name "$STACK" --region "$REGION" --no-prompts || true
+            aws cloudformation wait stack-delete-complete --region "$REGION" --stack-name "$STACK" || true
+          fi
       - name: SAM build
         working-directory: infra
         run: |

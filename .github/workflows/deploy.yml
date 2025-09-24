@@ -49,8 +49,31 @@ jobs:
       - name: Deploy to ${{ inputs.environment }}
         working-directory: infra
         run: |
-          sam delete --stack-name financial-bot-${{ inputs.environment }} --region ${{ secrets.AWS_REGION }} --no-prompts || true
-          aws cloudformation wait stack-delete-complete --region ${{ secrets.AWS_REGION }} --stack-name financial-bot-${{ inputs.environment }} || true
+          STACK=financial-bot-${{ inputs.environment }}
+          REGION=${{ secrets.AWS_REGION }}
+          if aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK" >/dev/null 2>&1; then
+            BUCKET=$(aws cloudformation describe-stack-resources \
+              --region "$REGION" \
+              --stack-name "$STACK" \
+              --logical-resource-id UploadsBucket \
+              --query "StackResources[0].PhysicalResourceId" \
+              --output text || echo "")
+            if [ -n "$BUCKET" ] && [ "$BUCKET" != "None" ]; then
+              aws s3 rm "s3://$BUCKET" --recursive || true
+            fi
+            IID=$(aws cloudformation describe-stack-resources \
+              --region "$REGION" \
+              --stack-name "$STACK" \
+              --logical-resource-id BotInstance \
+              --query "StackResources[0].PhysicalResourceId" \
+              --output text || echo "")
+            if [ -n "$IID" ] && [ "$IID" != "None" ]; then
+              aws ec2 terminate-instances --region "$REGION" --instance-ids "$IID" || true
+              aws ec2 wait instance-terminated --region "$REGION" --instance-ids "$IID" || true
+            fi
+            sam delete --stack-name "$STACK" --region "$REGION" --no-prompts || true
+            aws cloudformation wait stack-delete-complete --region "$REGION" --stack-name "$STACK" || true
+          fi
           sam build --template template.yaml --build-dir .aws-sam/build
           sam deploy \
             --stack-name financial-bot-${{ inputs.environment }} \
