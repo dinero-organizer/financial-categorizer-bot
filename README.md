@@ -21,7 +21,7 @@ flowchart TB
   handler --> hash[SHA-256<br/>do arquivo]
 
   %% Verifica cache S3
-  hash --> cache{Cache S3?<br/>(user_id + hash)}
+  hash --> cache{Cache S3<br/>chave: user_id e hash}
   cache -->|Sim| get[Baixar CSV<br/>do cache]
   get --> reply[reply_<br/>document]
 
