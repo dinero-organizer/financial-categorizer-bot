@@ -73,13 +73,6 @@ Resources:
             Prefix: cache/
             ExpirationInDays: 60
 
-  # CloudWatch Log Group
-  BotLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /financial-bot-${Environment}
-      RetentionInDays: 14
-
   # IAM Role para instância EC2 (S3 + CloudWatch + SSM)
   EC2InstanceRole:
     Type: AWS::IAM::Role
