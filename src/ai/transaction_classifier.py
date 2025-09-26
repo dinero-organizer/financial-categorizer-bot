@@ -61,24 +61,28 @@ class TransactionClassifier:
             return []
         
         categories = self.default_categories
+        logger.info(f"AI: iniciando categorização | transações={len(transactions)} | categorias={len(categories)}")
         
         try:
             # Prepara o prompt para o Gemini
             prompt = self._build_categorization_prompt(transactions, categories)
+            logger.info(f"AI: prompt construído | tamanho={len(prompt)}")
             
             # Chama a API do Gemini
             response = self._call_gemini_api(prompt)
+            logger.info(f"AI: resposta recebida da API | tamanho={len(response) if response else 0}")
             
             # Processa a resposta
             categorized_transactions = self._process_categorization_response(
                 response, transactions
             )
-            
-            logger.info(f"Categorização concluída para {len(transactions)} transações")
+            # Estatísticas de saída
+            num_outros = sum(1 for tx in categorized_transactions if tx.get('category') == 'Outros')
+            logger.info(f"AI: categorização concluída | total={len(transactions)} | outros={num_outros}")
             return categorized_transactions
             
         except Exception as e:
-            logger.error(f"Erro na categorização: {e}")
+            logger.error(f"AI: erro na categorização: {e}")
             # Retorna transações sem categorização em caso de erro
             return [self._add_default_category(tx) for tx in transactions]
     
@@ -126,12 +130,15 @@ Responda apenas com o JSON, sem texto adicional:
     def _call_gemini_api(self, prompt: str) -> str:
         """Chama a API do Gemini"""
         try:
+            logger.info("AI: chamando modelo gemini-1.5-flash")
             model = self.client.GenerativeModel('gemini-1.5-flash')
             response = model.generate_content(prompt)
-            return response.text.strip()
+            text = (response.text or "").strip()
+            logger.info(f"AI: texto bruto da API (completo):\n{text}")
+            return text
             
         except Exception as e:
-            logger.error(f"Erro ao chamar API do Gemini: {e}")
+            logger.error(f"AI: erro ao chamar API do Gemini: {e}")
             raise
     
     def _process_categorization_response(self, response: str, 
@@ -139,10 +146,13 @@ Responda apenas com o JSON, sem texto adicional:
         """Processa a resposta do Gemini e aplica as categorizações"""
         try:
             # Remove cercas de código markdown e extrai apenas o JSON
+            logger.info(f"AI: iniciando parse da resposta | tamanho={len(response) if response else 0}")
             cleaned = self._extract_json_from_text(response)
+            logger.info(f"AI: JSON extraído (completo):\n{cleaned}")
             # Parse da resposta JSON
             result = json.loads(cleaned)
             categorizations = result.get('categorizations', [])
+            logger.info(f"AI: itens em 'categorizations' = {len(categorizations)}")
             
             # Cria um mapa de categorizações por id
             categorization_map = {}
@@ -167,15 +177,16 @@ Responda apenas com o JSON, sem texto adicional:
                     tx_copy['categorization_reasoning'] = 'Não foi possível categorizar'
                 categorized_transactions.append(tx_copy)
             
+            logger.info(f"AI: mapeamento aplicado | categorizadas={len(categorized_transactions)}")
             return categorized_transactions
             
         except json.JSONDecodeError as e:
-            logger.error(f"Erro ao processar resposta JSON do Gemini: {e}")
-            logger.error(f"Resposta recebida: {response}")
+            logger.error(f"AI: erro JSONDecode ao processar resposta: {e}")
+            logger.error(f"AI: resposta recebida (completa): {str(response)}")
             # Retorna transações sem categorização em caso de erro de parsing
             return [self._add_default_category(tx) for tx in original_transactions]
         except Exception as e:
-            logger.error(f"Erro ao processar categorizações: {e}")
+            logger.error(f"AI: erro ao processar categorizações: {e}")
             return [self._add_default_category(tx) for tx in original_transactions]
 
     def _extract_json_from_text(self, text: str) -> str:
