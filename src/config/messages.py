@@ -13,7 +13,7 @@ class TelegramMessages:
     # Mensagens de boas-vindas/comandos
     WELCOME = (
         "👋 Olá, seja bem-vindo!\n\n"
-        "Eu sou o *Financial Categorizer Bot* 🤖💰\n\n"
+        "Eu sou o *Financial Categorizer Bot V1* 🤖💰\n\n"
         "Aqui você pode enviar seus arquivos **CSV** ou **OFX** "
         "para que eu processe suas transações e gere relatórios categorizados. 🚀"
     )
