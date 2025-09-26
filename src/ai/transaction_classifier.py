@@ -130,11 +130,13 @@ Responda apenas com o JSON, sem texto adicional:
     def _call_gemini_api(self, prompt: str) -> str:
         """Chama a API do Gemini"""
         try:
-            logger.info("AI: chamando modelo gemini-1.5-flash")
-            model = self.client.GenerativeModel('gemini-1.5-flash')
+            # Usa um único modelo: override via GEMINI_MODEL_ID, senão padrão free-tier amigável
+            model_name = os.getenv("GEMINI_MODEL_ID", "gemini-1.5-flash-8b").strip() or "gemini-1.5-flash-8b"
+            logger.info(f"AI: usando modelo '{model_name}'")
+            model = self.client.GenerativeModel(model_name)
             response = model.generate_content(prompt)
             text = (response.text or "").strip()
-            logger.info(f"AI: texto bruto da API (completo):\n{text}")
+            logger.info(f"AI: resposta do modelo '{model_name}' (completa):\n{text}")
             return text
             
         except Exception as e:
